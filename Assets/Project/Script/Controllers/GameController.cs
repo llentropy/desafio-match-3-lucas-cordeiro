@@ -11,6 +11,7 @@ namespace Gazeus.DesafioMatch3.Controllers
     public class GameController : MonoBehaviour
     {
         [SerializeField] private BoardView _boardView;
+        [SerializeField] private ScoreView _scoreView;
         [SerializeField] private int _boardHeight = 10;
         [SerializeField] private int _boardWidth = 10;
 
@@ -46,6 +47,8 @@ namespace Gazeus.DesafioMatch3.Controllers
             sequence.Append(_boardView.DestroyTiles(boardSequence.MatchedPosition));
             sequence.Append(_boardView.MoveTiles(boardSequence.MovedTiles));
             sequence.Append(_boardView.CreateTile(boardSequence.AddedTiles));
+            sequence.Append(_scoreView.UpdateScore(boardSequence.UpdatedScore));
+            sequence.Append(_scoreView.UpdateScoreMultiplier(boardSequence.UpdatedScoreMultiplier));
 
             index += 1;
             if (index < boardSequences.Count)

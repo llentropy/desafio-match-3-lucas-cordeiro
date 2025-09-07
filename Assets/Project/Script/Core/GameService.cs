@@ -9,6 +9,8 @@ namespace Gazeus.DesafioMatch3.Core
         private List<List<Tile>> _boardTiles;
         private List<int> _tilesTypes;
         private int _tileCount;
+        private int scoreMultiplier = 1;
+        private int gameScore = 0;
 
         public bool IsValidMovement(int fromX, int fromY, int toX, int toY)
         {
@@ -47,6 +49,30 @@ namespace Gazeus.DesafioMatch3.Core
             return _boardTiles;
         }
 
+        private void CalculateUpdatedScore(List<Tile> tilesToScore)
+        {
+            int scoreIncrement = 0;
+            Dictionary<int, int> quantityPerType = new();
+            foreach(var tile in tilesToScore)
+            {
+                if (!quantityPerType.ContainsKey(tile.Type))
+                {
+                    quantityPerType[tile.Type] = 1;
+                } else
+                {
+                    quantityPerType[tile.Type] = quantityPerType[tile.Type] + 1;
+                }
+            }
+
+            foreach(var type in quantityPerType.Keys)
+            {
+                scoreIncrement += ScoreBaseValues.BaseScoreIncrementPerPiece * quantityPerType[type] * scoreMultiplier;
+            }
+
+            gameScore += scoreIncrement;
+
+        }
+
         public List<BoardSequence> SwapTile(int fromX, int fromY, int toX, int toY)
         {
             List<List<Tile>> newBoard = CopyBoard(_boardTiles);
@@ -58,6 +84,9 @@ namespace Gazeus.DesafioMatch3.Core
 
             while (HasMatch(matchedTiles))
             {
+                //List to store the tiles that will contribute to the next match score
+                List<Tile> tilesToScore = new();
+
                 //Cleaning the matched tiles
                 List<Vector2Int> matchedPosition = new();
                 for (int y = 0; y < newBoard.Count; y++)
@@ -67,10 +96,13 @@ namespace Gazeus.DesafioMatch3.Core
                         if (matchedTiles[y][x])
                         {
                             matchedPosition.Add(new Vector2Int(x, y));
+                            tilesToScore.Add(newBoard[y][x]);
                             newBoard[y][x] = new Tile { Id = -1, Type = -1 };
                         }
                     }
                 }
+
+                CalculateUpdatedScore(tilesToScore);
 
                 // Dropping the tiles
                 Dictionary<int, MovedTileInfo> movedTiles = new();
@@ -137,7 +169,9 @@ namespace Gazeus.DesafioMatch3.Core
                 {
                     MatchedPosition = matchedPosition,
                     MovedTiles = movedTilesList,
-                    AddedTiles = addedTiles
+                    AddedTiles = addedTiles,
+                    UpdatedScore = gameScore,
+                    UpdatedScoreMultiplier = 1
                 };
                 boardSequences.Add(sequence);
                 matchedTiles = FindMatches(newBoard);
