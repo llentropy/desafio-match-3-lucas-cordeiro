@@ -13,20 +13,41 @@ namespace Gazeus.DesafioMatch3.Views
         [SerializeField] private TextMeshProUGUI scoreText;
         [SerializeField] private TextMeshProUGUI scoreMultiplierText;
         private Tweener multiplierDecayColorTweener;
+        private Tweener multiplierTextScaleTweener;
         private Color multiplierTextTweenColor = new Color(1, 0.23529f, 1);
 
-        private void Start()
+        //private void Start()
+        //{
+        //    InitializeScoreView();
+        //}
+
+        //public void InitializeScoreView()
+        //{
+        //    scoreText.text = "Score: 0";
+        //    //Tweeners for fading the color  and changing the scale to represent the multiplier reseting
+        //    scoreMultiplierText.transform.localScale = Vector3.one;
+        //    scoreMultiplierText.color = Color.white;
+        //    UpdateScore(0);
+        //    UpdateScoreMultiplier(1);
+        //}
+
+        private void KillTweensIfNotNull()
         {
-            scoreText.text = "Score: 0";
-            //Tweener for fading the color to represent the multiplier reseting
-            InitializeMultiplierDecayColorTweener();
-            multiplierDecayColorTweener.Pause();
+            if (multiplierDecayColorTweener != null)
+            {
+                multiplierDecayColorTweener.Kill();
+            }
+            if (multiplierTextScaleTweener != null)
+            {
+                multiplierTextScaleTweener.Kill();
+            }
         }
 
         public void InitializeMultiplierDecayColorTweener()
         {
+            KillTweensIfNotNull();
             multiplierDecayColorTweener = DOVirtual.Color(multiplierTextTweenColor, Color.white, GameConstants.TimeForMultiplierDecay, (color) => scoreMultiplierText.color = color);
-            scoreMultiplierText.transform.DOScale(Vector3.one, GameConstants.TimeForMultiplierDecay);
+            multiplierTextScaleTweener = DOVirtual.Vector3(Vector3.one * 2, Vector3.one, GameConstants.TimeForMultiplierDecay, (scale) => scoreMultiplierText.transform.localScale = scale);
         }
 
         public Tween UpdateScore(int updatedScore)
@@ -38,6 +59,7 @@ namespace Gazeus.DesafioMatch3.Views
 
         public Tween UpdateScoreMultiplier(int updatedScoreMultiplier)
         {
+            KillTweensIfNotNull();
             scoreMultiplierText.text = $"X{updatedScoreMultiplier}";
             if (updatedScoreMultiplier != 1)
             {

@@ -1,11 +1,12 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using DG.Tweening;
 using Gazeus.DesafioMatch3.Core;
 using Gazeus.DesafioMatch3.Models;
 using Gazeus.DesafioMatch3.Views;
+using System;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Gazeus.DesafioMatch3.Controllers
 {
@@ -14,6 +15,7 @@ namespace Gazeus.DesafioMatch3.Controllers
         [SerializeField] private BoardView _boardView;
         [SerializeField] private ScoreView _scoreView;
         [SerializeField] private TimerView _timerView;
+        [SerializeField] private EndGameView _endGameView;
 
 
         [SerializeField] private int _boardHeight = 10;
@@ -23,6 +25,7 @@ namespace Gazeus.DesafioMatch3.Controllers
         private bool _isAnimating;
         private int _selectedX = -1;
         private int _selectedY = -1;
+        private bool _isMatchRunning = true;
 
         private Coroutine multiplierDecayCoroutine;
 
@@ -33,28 +36,61 @@ namespace Gazeus.DesafioMatch3.Controllers
         {
             _gameEngine = new GameService();
             _boardView.TileClicked += OnTileClick;
+            _endGameView.PlayAgainButtonPressed += RestartMatch;
         }
 
         private void OnDestroy()
         {
             _boardView.TileClicked -= OnTileClick;
+            _endGameView.PlayAgainButtonPressed -= RestartMatch;
         }
 
         private void Start()
         {
-            List<List<Tile>> board = _gameEngine.StartGame(_boardWidth, _boardHeight);
-            _boardView.CreateBoard(board);
+            StartMatch();
+        }
+
+        private void RestartMatch()
+        {
+            SceneManager.LoadScene("Gameplay");
         }
 
         private void Update()
         {
             _timerView.UpdateTimerText(remainingMatchTime);
             remainingMatchTime -= Time.deltaTime;
+            if(remainingMatchTime <= 0 && _isMatchRunning )
+            {
+                _isMatchRunning = false;
+                EndMatch();
+            }
         }
         #endregion
 
+        private void StartMatch()
+        {
+            _isMatchRunning = true;
+            _boardView.gameObject.SetActive(true);
+            _scoreView.gameObject.SetActive(true);
+            _timerView.gameObject.SetActive(true);
+            _endGameView.gameObject.SetActive(false);
+            List<List<Tile>> board = _gameEngine.StartGame(_boardWidth, _boardHeight);
+            _boardView.CreateBoard(board);
+        }
+
+        private void EndMatch()
+        {
+            DOTween.KillAll();
+            _boardView.gameObject.SetActive(false);
+            _scoreView.gameObject.SetActive(false);
+            _timerView.gameObject.SetActive(false);
+            _endGameView.gameObject.SetActive(true);
+            _endGameView.SetFinalScore(_gameEngine.GameScore);
+        }
+
         private IEnumerator ResetScoreMultiplierAfterDecayTime()
         {
+            //This coroutine will always reset the multiplier after the decay time, unless it is cancelled by a new score
             yield return new WaitForSeconds(GameConstants.TimeForMultiplierDecay);
             _gameEngine.ResetScoreMultiplier();
             _scoreView.UpdateScoreMultiplier(1);

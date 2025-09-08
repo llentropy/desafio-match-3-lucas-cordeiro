@@ -13,7 +13,7 @@ namespace Gazeus.DesafioMatch3.Core
         private List<int> _tilesTypes;
         private int _tileCount;
         private int scoreMultiplier = 1;
-        private int gameScore = 0;
+        public int GameScore { get; private set; } = 0;
 
         public bool IsValidMovement(int fromX, int fromY, int toX, int toY)
         {
@@ -46,10 +46,16 @@ namespace Gazeus.DesafioMatch3.Core
 
         public List<List<Tile>> StartGame(int boardWidth, int boardHeight)
         {
+            GameScore = 0;
             _tilesTypes = new List<int> { 0, 1, 2, 3 };
             _boardTiles = CreateBoard(boardWidth, boardHeight, _tilesTypes);
 
             return _boardTiles;
+        }
+
+        public void EndGame()
+        {
+            GameScore = 0;
         }
 
         public void ResetScoreMultiplier()
@@ -78,7 +84,7 @@ namespace Gazeus.DesafioMatch3.Core
                 scoreIncrement += GameConstants.BaseScoreIncrementPerPiece * quantityPerType[type] * scoreMultiplier;
             }
 
-            gameScore += scoreIncrement;
+            GameScore += scoreIncrement;
 
         }
 
@@ -180,7 +186,7 @@ namespace Gazeus.DesafioMatch3.Core
                     MatchedPosition = matchedPosition,
                     MovedTiles = movedTilesList,
                     AddedTiles = addedTiles,
-                    UpdatedScore = gameScore,
+                    UpdatedScore = GameScore,
                     UpdatedScoreMultiplier = scoreMultiplier
                 };
                 boardSequences.Add(sequence);
