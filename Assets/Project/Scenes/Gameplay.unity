@@ -131,8 +131,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 349773695}
+  - component: {fileID: 349773696}
   m_Layer: 5
-  m_Name: Timer
+  m_Name: TimerContainer
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -158,6 +159,19 @@ RectTransform:
   m_AnchoredPosition: {x: -108.751495, y: -50}
   m_SizeDelta: {x: 177.5029, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &349773696
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 349773694}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b51c1fb46eee01458f09e234de305a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  timerText: {fileID: 1636894626}
 --- !u!1 &429446041
 GameObject:
   m_ObjectHideFlags: 0
@@ -766,6 +780,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _boardView: {fileID: 429446043}
   _scoreView: {fileID: 1246531630}
+  _timerView: {fileID: 349773696}
   _boardHeight: 10
   _boardWidth: 10
 --- !u!4 &1361904665

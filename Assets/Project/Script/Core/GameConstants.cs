@@ -11,5 +11,8 @@ namespace Gazeus.DesafioMatch3
 
         //Decay time in seconds
         public const float TimeForMultiplierDecay = 2;
+
+        //Time in seconds for the match to end
+        public const float MatchTime = 60;
     }
 }

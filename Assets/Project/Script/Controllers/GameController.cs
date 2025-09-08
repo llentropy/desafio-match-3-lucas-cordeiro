@@ -13,6 +13,8 @@ namespace Gazeus.DesafioMatch3.Controllers
     {
         [SerializeField] private BoardView _boardView;
         [SerializeField] private ScoreView _scoreView;
+        [SerializeField] private TimerView _timerView;
+
 
         [SerializeField] private int _boardHeight = 10;
         [SerializeField] private int _boardWidth = 10;
@@ -23,6 +25,8 @@ namespace Gazeus.DesafioMatch3.Controllers
         private int _selectedY = -1;
 
         private Coroutine multiplierDecayCoroutine;
+
+        private float remainingMatchTime = GameConstants.MatchTime;
 
         #region Unity
         private void Awake()
@@ -40,6 +44,12 @@ namespace Gazeus.DesafioMatch3.Controllers
         {
             List<List<Tile>> board = _gameEngine.StartGame(_boardWidth, _boardHeight);
             _boardView.CreateBoard(board);
+        }
+
+        private void Update()
+        {
+            _timerView.UpdateTimerText(remainingMatchTime);
+            remainingMatchTime -= Time.deltaTime;
         }
         #endregion
 
