@@ -13,6 +13,7 @@ namespace Gazeus.DesafioMatch3.Views
         [SerializeField] private TextMeshProUGUI scoreText;
         [SerializeField] private TextMeshProUGUI scoreMultiplierText;
         private Tweener multiplierDecayColorTweener;
+        private Color multiplierTextTweenColor = new Color(1, 0.23529f, 1);
 
         private void Start()
         {
@@ -24,7 +25,7 @@ namespace Gazeus.DesafioMatch3.Views
 
         public void InitializeMultiplierDecayColorTweener()
         {
-            multiplierDecayColorTweener = DOVirtual.Color(Color.yellow, Color.white, GameConstants.TimeForMultiplierDecay, (color) => scoreMultiplierText.color = color);
+            multiplierDecayColorTweener = DOVirtual.Color(multiplierTextTweenColor, Color.white, GameConstants.TimeForMultiplierDecay, (color) => scoreMultiplierText.color = color);
             scoreMultiplierText.transform.DOScale(Vector3.one, GameConstants.TimeForMultiplierDecay);
         }
 
@@ -38,10 +39,10 @@ namespace Gazeus.DesafioMatch3.Views
         public Tween UpdateScoreMultiplier(int updatedScoreMultiplier)
         {
             scoreMultiplierText.text = $"X{updatedScoreMultiplier}";
-            if(updatedScoreMultiplier != 1)
+            if (updatedScoreMultiplier != 1)
             {
                 //Change color to emphasize the multiplier
-                scoreMultiplierText.color = Color.yellow;
+                scoreMultiplierText.color = multiplierTextTweenColor;
                 scoreMultiplierText.transform.localScale = Vector3.one * 2;
 
             }
