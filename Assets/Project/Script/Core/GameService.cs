@@ -1,6 +1,9 @@
+using System;
 using System.Collections.Generic;
 using Gazeus.DesafioMatch3.Models;
 using UnityEngine;
+using UnityEngine.PlayerLoop;
+using Random = UnityEngine.Random;
 
 namespace Gazeus.DesafioMatch3.Core
 {
@@ -49,6 +52,11 @@ namespace Gazeus.DesafioMatch3.Core
             return _boardTiles;
         }
 
+        public void ResetScoreMultiplier()
+        {
+            scoreMultiplier = 1;
+        }
+
         private void CalculateUpdatedScore(List<Tile> tilesToScore)
         {
             int scoreIncrement = 0;
@@ -66,7 +74,8 @@ namespace Gazeus.DesafioMatch3.Core
 
             foreach(var type in quantityPerType.Keys)
             {
-                scoreIncrement += ScoreBaseValues.BaseScoreIncrementPerPiece * quantityPerType[type] * scoreMultiplier;
+                scoreMultiplier++;
+                scoreIncrement += ScoreBaseConstants.BaseScoreIncrementPerPiece * quantityPerType[type] * scoreMultiplier;
             }
 
             gameScore += scoreIncrement;
@@ -102,6 +111,7 @@ namespace Gazeus.DesafioMatch3.Core
                     }
                 }
 
+                //Calculate game score for each removed tile
                 CalculateUpdatedScore(tilesToScore);
 
                 // Dropping the tiles
@@ -171,7 +181,7 @@ namespace Gazeus.DesafioMatch3.Core
                     MovedTiles = movedTilesList,
                     AddedTiles = addedTiles,
                     UpdatedScore = gameScore,
-                    UpdatedScoreMultiplier = 1
+                    UpdatedScoreMultiplier = scoreMultiplier
                 };
                 boardSequences.Add(sequence);
                 matchedTiles = FindMatches(newBoard);

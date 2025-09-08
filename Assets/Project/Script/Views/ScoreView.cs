@@ -5,16 +5,26 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System;
+using Gazeus.DesafioMatch3.Core;
 namespace Gazeus.DesafioMatch3.Views
 {
     public class ScoreView : MonoBehaviour
     {
         [SerializeField] private TextMeshProUGUI scoreText;
         [SerializeField] private TextMeshProUGUI scoreMultiplierText;
+        private Tweener colorTweener;
 
         private void Start()
         {
             scoreText.text = "Score: 0";
+            //Tweener for fading the color to represent the multiplier reseting
+            InitializeColorTweener();
+            colorTweener.Pause();
+        }
+
+        public void InitializeColorTweener()
+        {
+            colorTweener = DOVirtual.Color(Color.yellow, Color.white, ScoreBaseConstants.TimeForMultiplierDecay, (color) => scoreMultiplierText.color = color);
         }
 
         public Tween UpdateScore(int updatedScore)
@@ -24,8 +34,14 @@ namespace Gazeus.DesafioMatch3.Views
             return DOVirtual.DelayedCall(0.2f, () => { });
         }
 
-        internal Tween UpdateScoreMultiplier(int updatedScoreMultiplier)
+        public Tween UpdateScoreMultiplier(int updatedScoreMultiplier)
         {
+            scoreMultiplierText.text = $"X{updatedScoreMultiplier}";
+            if(updatedScoreMultiplier != 1)
+            {
+                //Change color to emphasize the multiplier
+                scoreMultiplierText.color = Color.yellow;
+            }
             return DOVirtual.DelayedCall(0.2f, () => { });
         }
     }

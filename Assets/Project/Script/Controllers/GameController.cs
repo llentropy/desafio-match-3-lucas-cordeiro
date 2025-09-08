@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
 using Gazeus.DesafioMatch3.Core;
@@ -20,6 +21,8 @@ namespace Gazeus.DesafioMatch3.Controllers
         private int _selectedX = -1;
         private int _selectedY = -1;
 
+        private Coroutine multiplierDecayCoroutine;
+
         #region Unity
         private void Awake()
         {
@@ -38,6 +41,13 @@ namespace Gazeus.DesafioMatch3.Controllers
             _boardView.CreateBoard(board);
         }
         #endregion
+
+        private IEnumerator ResetScoreMultiplierAfterDecayTime()
+        {
+            yield return new WaitForSeconds(ScoreBaseConstants.TimeForMultiplierDecay);
+            _gameEngine.ResetScoreMultiplier();
+            _scoreView.UpdateScoreMultiplier(1);
+        }
 
         private void AnimateBoard(List<BoardSequence> boardSequences, int index, Action onComplete)
         {
@@ -61,6 +71,8 @@ namespace Gazeus.DesafioMatch3.Controllers
             }
         }
 
+       
+
         private void OnTileClick(int x, int y)
         {
             if (_isAnimating) return;
@@ -80,8 +92,17 @@ namespace Gazeus.DesafioMatch3.Controllers
                         bool isValid = _gameEngine.IsValidMovement(_selectedX, _selectedY, x, y);
                         if (isValid)
                         {
+                            
                             List<BoardSequence> swapResult = _gameEngine.SwapTile(_selectedX, _selectedY, x, y);
-                            AnimateBoard(swapResult, 0, () => _isAnimating = false);
+                            if(swapResult.Count > 1 && multiplierDecayCoroutine != null)
+                            {
+                                StopCoroutine(multiplierDecayCoroutine);
+                            }
+                            AnimateBoard(swapResult, 0, () => { 
+                                _isAnimating = false;
+                                multiplierDecayCoroutine = StartCoroutine(ResetScoreMultiplierAfterDecayTime());
+                                _scoreView.InitializeColorTweener();
+                            });
                         }
                         else
                         {
