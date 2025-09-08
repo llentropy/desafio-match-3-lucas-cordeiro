@@ -25,6 +25,7 @@ namespace Gazeus.DesafioMatch3.Views
         public void InitializeMultiplierDecayColorTweener()
         {
             multiplierDecayColorTweener = DOVirtual.Color(Color.yellow, Color.white, GameConstants.TimeForMultiplierDecay, (color) => scoreMultiplierText.color = color);
+            scoreMultiplierText.transform.DOScale(Vector3.one, GameConstants.TimeForMultiplierDecay);
         }
 
         public Tween UpdateScore(int updatedScore)
@@ -41,6 +42,8 @@ namespace Gazeus.DesafioMatch3.Views
             {
                 //Change color to emphasize the multiplier
                 scoreMultiplierText.color = Color.yellow;
+                scoreMultiplierText.transform.localScale = Vector3.one * 2;
+
             }
             return DOVirtual.DelayedCall(0.2f, () => { });
         }
