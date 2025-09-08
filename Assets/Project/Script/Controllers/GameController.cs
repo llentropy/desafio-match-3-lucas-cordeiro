@@ -13,6 +13,7 @@ namespace Gazeus.DesafioMatch3.Controllers
     {
         [SerializeField] private BoardView _boardView;
         [SerializeField] private ScoreView _scoreView;
+
         [SerializeField] private int _boardHeight = 10;
         [SerializeField] private int _boardWidth = 10;
 
