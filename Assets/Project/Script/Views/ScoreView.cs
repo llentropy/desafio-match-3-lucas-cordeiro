@@ -12,19 +12,19 @@ namespace Gazeus.DesafioMatch3.Views
     {
         [SerializeField] private TextMeshProUGUI scoreText;
         [SerializeField] private TextMeshProUGUI scoreMultiplierText;
-        private Tweener colorTweener;
+        private Tweener multiplierDecayColorTweener;
 
         private void Start()
         {
             scoreText.text = "Score: 0";
             //Tweener for fading the color to represent the multiplier reseting
-            InitializeColorTweener();
-            colorTweener.Pause();
+            InitializeMultiplierDecayColorTweener();
+            multiplierDecayColorTweener.Pause();
         }
 
-        public void InitializeColorTweener()
+        public void InitializeMultiplierDecayColorTweener()
         {
-            colorTweener = DOVirtual.Color(Color.yellow, Color.white, ScoreBaseConstants.TimeForMultiplierDecay, (color) => scoreMultiplierText.color = color);
+            multiplierDecayColorTweener = DOVirtual.Color(Color.yellow, Color.white, GameConstants.TimeForMultiplierDecay, (color) => scoreMultiplierText.color = color);
         }
 
         public Tween UpdateScore(int updatedScore)

@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Gazeus.DesafioMatch3
 {
-    public static class ScoreBaseConstants
+    public static class GameConstants
     {
         //Base value for incrementing score
         public const int BaseScoreIncrementPerPiece = 100 ;

@@ -44,7 +44,7 @@ namespace Gazeus.DesafioMatch3.Controllers
 
         private IEnumerator ResetScoreMultiplierAfterDecayTime()
         {
-            yield return new WaitForSeconds(ScoreBaseConstants.TimeForMultiplierDecay);
+            yield return new WaitForSeconds(GameConstants.TimeForMultiplierDecay);
             _gameEngine.ResetScoreMultiplier();
             _scoreView.UpdateScoreMultiplier(1);
         }
@@ -101,7 +101,7 @@ namespace Gazeus.DesafioMatch3.Controllers
                             AnimateBoard(swapResult, 0, () => { 
                                 _isAnimating = false;
                                 multiplierDecayCoroutine = StartCoroutine(ResetScoreMultiplierAfterDecayTime());
-                                _scoreView.InitializeColorTweener();
+                                _scoreView.InitializeMultiplierDecayColorTweener();
                             });
                         }
                         else

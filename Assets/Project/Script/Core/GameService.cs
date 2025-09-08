@@ -75,7 +75,7 @@ namespace Gazeus.DesafioMatch3.Core
             foreach(var type in quantityPerType.Keys)
             {
                 scoreMultiplier++;
-                scoreIncrement += ScoreBaseConstants.BaseScoreIncrementPerPiece * quantityPerType[type] * scoreMultiplier;
+                scoreIncrement += GameConstants.BaseScoreIncrementPerPiece * quantityPerType[type] * scoreMultiplier;
             }
 
             gameScore += scoreIncrement;
