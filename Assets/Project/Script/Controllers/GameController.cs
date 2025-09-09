@@ -118,10 +118,10 @@ namespace Gazeus.DesafioMatch3.Controllers
             }
         }
 
-       
-
         private void OnTileClick(int x, int y)
         {
+            _gameEngine.RevalidateBlockedTiles(Time.time);
+            if (_gameEngine.IsTileBlocked(x, y)) return;
             if (_isAnimating) return;
 
             if (_selectedX > -1 && _selectedY > -1)
@@ -136,7 +136,7 @@ namespace Gazeus.DesafioMatch3.Controllers
                     _isAnimating = true;
                     _boardView.SwapTiles(_selectedX, _selectedY, x, y).onComplete += () =>
                     {
-                        bool isValid = _gameEngine.IsValidMovement(_selectedX, _selectedY, x, y);
+                        bool isValid = _gameEngine.IsValidMovement(_selectedX, _selectedY, x, y, Time.time);
                         if (isValid)
                         {
                             

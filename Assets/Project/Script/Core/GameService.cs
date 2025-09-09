@@ -15,7 +15,25 @@ namespace Gazeus.DesafioMatch3.Core
         private int scoreMultiplier = 1;
         public int GameScore { get; private set; } = 0;
 
-        public bool IsValidMovement(int fromX, int fromY, int toX, int toY)
+        private int quantityOfNextBlockedTiles = 200;
+
+        public bool IsTileBlocked(int x, int y)
+        {
+            Tile tile = _boardTiles[y][x];
+            return tile.IsBlocked;
+        }
+        public void RevalidateBlockedTiles(float timestamp)
+        {
+            foreach (var tileList in _boardTiles) {
+                foreach (var tile in tileList) { 
+                    if(tile.IsBlocked && timestamp > (tile.BlockedStatusDuration + tile.SpawnTimestamp))
+                    {
+                        tile.IsBlocked = false;
+                    }
+                }
+            }
+        }
+        public bool IsValidMovement(int fromX, int fromY, int toX, int toY, float timestamp)
         {
             List<List<Tile>> newBoard = CopyBoard(_boardTiles);
 
@@ -26,6 +44,7 @@ namespace Gazeus.DesafioMatch3.Core
                 for (int x = 0; x < newBoard[y].Count; x++)
                 {
                     if (x > 1 &&
+                        !(newBoard[y][x].IsBlocked || newBoard[y][x - 1].IsBlocked || newBoard[y][x - 2].IsBlocked) &&
                         newBoard[y][x].Type == newBoard[y][x - 1].Type &&
                         newBoard[y][x - 1].Type == newBoard[y][x - 2].Type)
                     {
@@ -33,6 +52,7 @@ namespace Gazeus.DesafioMatch3.Core
                     }
 
                     if (y > 1 &&
+                        !(newBoard[y][x].IsBlocked || newBoard[y - 1][x].IsBlocked || newBoard[y - 2][x].IsBlocked) &&
                         newBoard[y][x].Type == newBoard[y - 1][x].Type &&
                         newBoard[y - 1][x].Type == newBoard[y - 2][x].Type)
                     {
@@ -65,6 +85,7 @@ namespace Gazeus.DesafioMatch3.Core
 
         private void CalculateUpdatedScore(List<Tile> tilesToScore)
         {
+            quantityOfNextBlockedTiles++;
             int scoreIncrement = 0;
             Dictionary<int, int> quantityPerType = new();
             foreach(var tile in tilesToScore)
@@ -172,10 +193,28 @@ namespace Gazeus.DesafioMatch3.Core
                             Tile tile = newBoard[y][x];
                             tile.Id = _tileCount++;
                             tile.Type = _tilesTypes[tileType];
+                            tile.SpawnTimestamp = Time.time;
+                            tile.IsBlocked = false;
+                            tile.BlockedStatusDuration = 0;
+                            if(quantityOfNextBlockedTiles > 0)
+                            {
+                                if(Random.Range(0, 1.0f) < GameConstants.ProbabilityToGenerateBlockedTile)
+                                {
+                                    quantityOfNextBlockedTiles--;
+                                    tile.IsBlocked = true;
+                                    tile.BlockedStatusDuration = GameConstants.BlockedTileDuration;
+                                }
+                            }
+
+
                             addedTiles.Add(new AddedTileInfo
                             {
                                 Position = new Vector2Int(x, y),
-                                Type = tile.Type
+                                Type = tile.Type,
+                                SpawnTimestamp = tile.SpawnTimestamp,
+                                IsBlocked = tile.IsBlocked,
+                                BlockedStatusDuration = tile.BlockedStatusDuration
+
                             });
                         }
                     }
@@ -207,7 +246,7 @@ namespace Gazeus.DesafioMatch3.Core
                 for (int x = 0; x < boardToCopy[y].Count; x++)
                 {
                     Tile tile = boardToCopy[y][x];
-                    newBoard[y].Add(new Tile { Id = tile.Id, Type = tile.Type });
+                    newBoard[y].Add(new Tile { Id = tile.Id, Type = tile.Type, IsBlocked = tile.IsBlocked, BlockedStatusDuration = tile.BlockedStatusDuration, SpawnTimestamp = tile.SpawnTimestamp });
                 }
             }
 
@@ -274,6 +313,7 @@ namespace Gazeus.DesafioMatch3.Core
                 for (int x = 0; x < newBoard[y].Count; x++)
                 {
                     if (x > 1 &&
+                        !(newBoard[y][x].IsBlocked || newBoard[y][x - 1].IsBlocked || newBoard[y][x - 2].IsBlocked) &&
                         newBoard[y][x].Type == newBoard[y][x - 1].Type &&
                         newBoard[y][x - 1].Type == newBoard[y][x - 2].Type)
                     {
@@ -283,6 +323,7 @@ namespace Gazeus.DesafioMatch3.Core
                     }
 
                     if (y > 1 &&
+                        !(newBoard[y][x].IsBlocked || newBoard[y - 1][x].IsBlocked || newBoard[y - 2][x].IsBlocked) &&
                         newBoard[y][x].Type == newBoard[y - 1][x].Type &&
                         newBoard[y - 1][x].Type == newBoard[y - 2][x].Type)
                     {

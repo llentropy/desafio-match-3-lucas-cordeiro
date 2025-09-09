@@ -64,6 +64,17 @@ namespace Gazeus.DesafioMatch3.Views
 
                 GameObject tilePrefab = _tilePrefabRepository.TileTypePrefabList[addedTileInfo.Type];
                 GameObject tile = Instantiate(tilePrefab);
+                if (addedTileInfo.IsBlocked)
+                {
+                    Image tileImage = tile.GetComponent<Image>();
+                    Color originalTileColor = tileImage.color;
+                    tileImage.color = Color.black;
+                    //Keep the block black for 90% of blocked time, then ease in the original color
+                    Sequence colorizeSequence = DOTween.Sequence();
+                    colorizeSequence.PrependInterval(addedTileInfo.BlockedStatusDuration * 0.9f);
+                    colorizeSequence.Append(DOVirtual.Color(Color.black, originalTileColor, addedTileInfo.BlockedStatusDuration * 0.1f, (color) => tileImage.color = color));
+                    colorizeSequence.SetLink(tile);
+                }
                 tileSpot.SetTile(tile);
 
                 _tiles[position.y][position.x] = tile;
