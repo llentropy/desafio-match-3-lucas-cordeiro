@@ -446,7 +446,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 214107531}
         m_TargetAssemblyTypeName: Gazeus.DesafioMatch3.ServerBehaviour, DesafioMatch3
-        m_MethodName: StartServer
+        m_MethodName: StartAsServer
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -530,7 +530,7 @@ GameObject:
   - component: {fileID: 214107531}
   - component: {fileID: 214107530}
   m_Layer: 0
-  m_Name: NetworkingManager
+  m_Name: NetworkManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1528,9 +1528,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 214107530}
-        m_TargetAssemblyTypeName: Gazeus.DesafioMatch3.ClientBehaviour, DesafioMatch3
-        m_MethodName: StartClient
+      - m_Target: {fileID: 214107531}
+        m_TargetAssemblyTypeName: Gazeus.DesafioMatch3.ServerBehaviour, DesafioMatch3
+        m_MethodName: StartAsClient
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

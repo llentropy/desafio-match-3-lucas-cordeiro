@@ -21,6 +21,6 @@ namespace Gazeus.DesafioMatch3
         //Default time for a blocked tile to become unblocked
         public const float BlockedTileDuration = 10;
 
-        public const int DefaultConnectionPort = 7000;
+        public const int DefaultConnectionPort = 6000;
     }
 }

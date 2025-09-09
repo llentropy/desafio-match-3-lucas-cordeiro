@@ -10,13 +10,21 @@ using UnityEngine.SceneManagement;
 
 namespace Gazeus.DesafioMatch3.Controllers
 {
+    enum GameMode
+    {
+        SinglePlayer,
+        Versus
+    }
     public class GameController : MonoBehaviour
     {
         [SerializeField] private BoardView _boardView;
         [SerializeField] private ScoreView _scoreView;
         [SerializeField] private TimerView _timerView;
         [SerializeField] private EndGameView _endGameView;
+        [SerializeField] private VersusModeStatusView _versusModeStatusView;
+        private NetworkManager _networkManager;
 
+        private GameMode _gameMode;
 
         [SerializeField] private int _boardHeight = 10;
         [SerializeField] private int _boardWidth = 10;
@@ -37,6 +45,22 @@ namespace Gazeus.DesafioMatch3.Controllers
             _gameEngine = new GameService();
             _boardView.TileClicked += OnTileClick;
             _endGameView.PlayAgainButtonPressed += RestartMatch;
+
+            _networkManager = FindAnyObjectByType<NetworkManager>();
+            if(_networkManager != null)
+            {
+                _gameMode = GameMode.Versus;
+                SetupVersusMode();
+            } else
+            {
+                _gameMode = GameMode.SinglePlayer;
+            }
+        }
+
+        private void SetupVersusMode()
+        {
+            _versusModeStatusView.gameObject.SetActive(true);
+            _versusModeStatusView.SetPlayerNames(_networkManager.PlayerName, _networkManager.OpponentName);
         }
 
         private void OnDestroy()
