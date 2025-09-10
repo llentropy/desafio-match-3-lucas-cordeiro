@@ -2,6 +2,7 @@ using DG.Tweening;
 using Gazeus.DesafioMatch3.Core;
 using Gazeus.DesafioMatch3.Models;
 using Gazeus.DesafioMatch3.Views;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -10,12 +11,15 @@ using UnityEngine.SceneManagement;
 
 namespace Gazeus.DesafioMatch3.Controllers
 {
+    
     public class GameController : MonoBehaviour
     {
         [SerializeField] private BoardView _boardView;
         [SerializeField] private ScoreView _scoreView;
         [SerializeField] private TimerView _timerView;
         [SerializeField] private EndGameView _endGameView;
+        [SerializeField] private VersusModeStatusView _versusModeStatusView;
+        private NetworkManager _networkManager;
 
 
         [SerializeField] private int _boardHeight = 10;
@@ -30,19 +34,60 @@ namespace Gazeus.DesafioMatch3.Controllers
         private Coroutine multiplierDecayCoroutine;
 
         private float remainingMatchTime = GameConstants.MatchTime;
+        private float _lastUpdateClockTime;
 
         #region Unity
         private void Awake()
         {
             _gameEngine = new GameService();
             _boardView.TileClicked += OnTileClick;
-            _endGameView.PlayAgainButtonPressed += RestartMatch;
+            _endGameView.MainMenuButtonPressed += ExitMatch;
+
+            _networkManager = FindAnyObjectByType<NetworkManager>();
+            if(_networkManager != null && _networkManager.ConnectionMode != ConnectionMode.Disconnected)
+            {
+                //Bind the events to the GameService and NetworkManager behaviours
+                _gameEngine.MatchGameMode = GameMode.Versus;
+                _networkManager.ReceivedBlockedTilesEvent += (quantity) => ReceiveBlockedTiles(quantity);
+                _networkManager.ReceivedOpponentFinalScoreEvent += (opponentFinalScore) => _endGameView.SetFinalScore(_gameEngine.GameScore, opponentFinalScore, _networkManager.PlayerName, _networkManager.OpponentName);
+                if(_networkManager.ConnectionMode == ConnectionMode.Client)
+                {
+                    _networkManager.ReceivedUpdatedMatchClockEvent += (clock) => ClientSetMatchClock(clock);
+                }
+                SetupVersusModeUI();
+            } else
+            {
+                _gameEngine.MatchGameMode = GameMode.SinglePlayer;
+            }
+        }
+
+        private void SendBlockedTiles(int quantity)
+        {
+            _networkManager.AddQueuedMessage($"SendBlockedTiles;{quantity}");
+        }
+
+        private void SendFinalScore(int finalScore)
+        {
+            _networkManager.AddQueuedMessage($"SendFinalScore;{finalScore}");
+
+        }
+
+        private void ReceiveBlockedTiles(int quantity)
+        {
+            _versusModeStatusView.UpdateStatusForReceivedBlockedTiles(quantity, _networkManager.OpponentName);
+            _gameEngine.IncrementQuantityOfNextBlockedTiles(quantity);
+        }
+
+        private void SetupVersusModeUI()
+        {
+            _versusModeStatusView.gameObject.SetActive(true);
+            _versusModeStatusView.SetPlayerNames(_networkManager.PlayerName, _networkManager.OpponentName);
         }
 
         private void OnDestroy()
         {
             _boardView.TileClicked -= OnTileClick;
-            _endGameView.PlayAgainButtonPressed -= RestartMatch;
+            _endGameView.MainMenuButtonPressed -= ExitMatch;
         }
 
         private void Start()
@@ -50,21 +95,51 @@ namespace Gazeus.DesafioMatch3.Controllers
             StartMatch();
         }
 
-        private void RestartMatch()
+        private void ExitMatch()
         {
-            SceneManager.LoadScene("Gameplay");
+            if(_gameEngine.MatchGameMode == GameMode.Versus)
+            {
+                _networkManager.Disconnect();
+            } else
+            {
+                SceneManager.LoadScene("MainMenu");
+            }
         }
+
 
         private void Update()
         {
-            _timerView.UpdateTimerText(remainingMatchTime);
-            remainingMatchTime -= Time.deltaTime;
-            if(remainingMatchTime <= 0 && _isMatchRunning )
+            //If the game is not a client, update the match clock
+            if(!(_gameEngine.MatchGameMode == GameMode.Versus && _networkManager.ConnectionMode == ConnectionMode.Client))
             {
-                _isMatchRunning = false;
+                UpdateMatchClock();
+            } 
+            if (remainingMatchTime <= 0 && _isMatchRunning)
+            {
                 EndMatch();
             }
         }
+        //Called only for Single Player mode or for the Server in Versus Mode
+        private void UpdateMatchClock()
+        {
+            _timerView.UpdateTimerText(remainingMatchTime);
+            remainingMatchTime -= Time.deltaTime;
+            if (_gameEngine.MatchGameMode == GameMode.Versus && _networkManager.ConnectionMode == ConnectionMode.Server)
+            {
+                if(Time.time > (_lastUpdateClockTime + GameConstants.ClientUpdateClockInterval))
+                {
+                    _lastUpdateClockTime = Time.time;
+                    _networkManager.AddQueuedMessage($"SetMatchClock;{remainingMatchTime}");
+                }
+            }
+        }
+
+        private void ClientSetMatchClock(float serverRemainingMatchTime)
+        {
+            _timerView.UpdateTimerText(remainingMatchTime);
+            remainingMatchTime = serverRemainingMatchTime;
+        }
+
         #endregion
 
         private void StartMatch()
@@ -73,6 +148,12 @@ namespace Gazeus.DesafioMatch3.Controllers
             _boardView.gameObject.SetActive(true);
             _scoreView.gameObject.SetActive(true);
             _timerView.gameObject.SetActive(true);
+            if (_gameEngine.MatchGameMode == GameMode.Versus) {
+                _versusModeStatusView.gameObject.SetActive(true);
+            } else
+            {
+                _versusModeStatusView.gameObject.SetActive(false);
+            }
             _endGameView.gameObject.SetActive(false);
             List<List<Tile>> board = _gameEngine.StartGame(_boardWidth, _boardHeight);
             _boardView.CreateBoard(board);
@@ -80,12 +161,21 @@ namespace Gazeus.DesafioMatch3.Controllers
 
         private void EndMatch()
         {
+            _isMatchRunning = false;
             DOTween.KillAll();
             _boardView.gameObject.SetActive(false);
             _scoreView.gameObject.SetActive(false);
             _timerView.gameObject.SetActive(false);
+            if (_gameEngine.MatchGameMode == GameMode.Versus)
+            {
+                _versusModeStatusView.gameObject.SetActive(false);
+                SendFinalScore(_gameEngine.GameScore);
+            }
             _endGameView.gameObject.SetActive(true);
-            _endGameView.SetFinalScore(_gameEngine.GameScore);
+            if(_gameEngine.MatchGameMode == GameMode.SinglePlayer)
+            {
+                _endGameView.SetFinalScore(_gameEngine.GameScore);
+            }
         }
 
         private IEnumerator ResetScoreMultiplierAfterDecayTime()
@@ -114,7 +204,24 @@ namespace Gazeus.DesafioMatch3.Controllers
             }
             else
             {
-                sequence.onComplete += () => onComplete();
+                int totalOfTilesToSend = 0;
+                foreach(var boardSequenceIt in boardSequences)
+                {
+                    totalOfTilesToSend += boardSequenceIt.QuantityOfBlockedTilesToSend;
+                }
+                if(_gameEngine.MatchGameMode == GameMode.Versus)
+                {
+                    sequence.onComplete += () => {
+
+                        SendBlockedTiles(totalOfTilesToSend);
+                        onComplete();
+                        
+                        };
+                }
+                else
+                {
+                    sequence.onComplete += () => onComplete();
+                }
             }
         }
 

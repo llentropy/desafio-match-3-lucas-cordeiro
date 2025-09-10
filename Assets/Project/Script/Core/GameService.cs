@@ -7,6 +7,11 @@ using Random = UnityEngine.Random;
 
 namespace Gazeus.DesafioMatch3.Core
 {
+    public enum GameMode
+    {
+        SinglePlayer,
+        Versus
+    }
     public class GameService
     {
         private List<List<Tile>> _boardTiles;
@@ -15,7 +20,14 @@ namespace Gazeus.DesafioMatch3.Core
         private int scoreMultiplier = 1;
         public int GameScore { get; private set; } = 0;
 
-        private int quantityOfNextBlockedTiles = 200;
+        private int quantityOfNextBlockedTiles = 0;
+
+        public GameMode MatchGameMode = GameMode.SinglePlayer;
+
+        public void IncrementQuantityOfNextBlockedTiles(int increment)
+        {
+            quantityOfNextBlockedTiles += increment;
+        }
 
         public bool IsTileBlocked(int x, int y)
         {
@@ -85,7 +97,11 @@ namespace Gazeus.DesafioMatch3.Core
 
         private void CalculateUpdatedScore(List<Tile> tilesToScore)
         {
-            quantityOfNextBlockedTiles++;
+            if(MatchGameMode == GameMode.SinglePlayer)
+            {
+                quantityOfNextBlockedTiles += Random.Range(1, GameConstants.MaxBlockedTilesGeneratedPerScore);
+            }
+
             int scoreIncrement = 0;
             Dictionary<int, int> quantityPerType = new();
             foreach(var tile in tilesToScore)
@@ -106,7 +122,6 @@ namespace Gazeus.DesafioMatch3.Core
             }
 
             GameScore += scoreIncrement;
-
         }
 
         public List<BoardSequence> SwapTile(int fromX, int fromY, int toX, int toY)
@@ -118,8 +133,10 @@ namespace Gazeus.DesafioMatch3.Core
             List<BoardSequence> boardSequences = new();
             List<List<bool>> matchedTiles = FindMatches(newBoard);
 
+
             while (HasMatch(matchedTiles))
             {
+                int quantityOfBlockedTilesToSend = 0;
                 //List to store the tiles that will contribute to the next match score
                 List<Tile> tilesToScore = new();
 
@@ -140,6 +157,11 @@ namespace Gazeus.DesafioMatch3.Core
 
                 //Calculate game score for each removed tile
                 CalculateUpdatedScore(tilesToScore);
+
+                if(MatchGameMode == GameMode.Versus)
+                {
+                    quantityOfBlockedTilesToSend += tilesToScore.Count;
+                }
 
                 // Dropping the tiles
                 Dictionary<int, MovedTileInfo> movedTiles = new();
@@ -198,7 +220,7 @@ namespace Gazeus.DesafioMatch3.Core
                             tile.BlockedStatusDuration = 0;
                             if(quantityOfNextBlockedTiles > 0)
                             {
-                                if(Random.Range(0, 1.0f) < GameConstants.ProbabilityToGenerateBlockedTile)
+                                if(Random.Range(0, 1.0f) <= GameConstants.ProbabilityToGenerateBlockedTile)
                                 {
                                     quantityOfNextBlockedTiles--;
                                     tile.IsBlocked = true;
@@ -226,11 +248,13 @@ namespace Gazeus.DesafioMatch3.Core
                     MovedTiles = movedTilesList,
                     AddedTiles = addedTiles,
                     UpdatedScore = GameScore,
-                    UpdatedScoreMultiplier = scoreMultiplier
+                    UpdatedScoreMultiplier = scoreMultiplier,
+                    QuantityOfBlockedTilesToSend = quantityOfBlockedTilesToSend
                 };
                 boardSequences.Add(sequence);
                 matchedTiles = FindMatches(newBoard);
             }
+
 
             _boardTiles = newBoard;
 

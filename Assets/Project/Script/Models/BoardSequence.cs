@@ -10,5 +10,6 @@ namespace Gazeus.DesafioMatch3.Models
         public List<Vector2Int> MatchedPosition { get; set; }
         public int UpdatedScore { get; set; }
         public int UpdatedScoreMultiplier { get; set; }
+        public int QuantityOfBlockedTilesToSend { get; set; }
     }
 }

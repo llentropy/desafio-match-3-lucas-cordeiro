@@ -9,25 +9,39 @@ namespace Gazeus.DesafioMatch3
     public class EndGameView : MonoBehaviour
     {
         [SerializeField] private TextMeshProUGUI finalScoreText;
-        [SerializeField] private Button playAgainButton;
-        public event Action PlayAgainButtonPressed;
+        [SerializeField] private Button mainMenuButton;
+        public event Action MainMenuButtonPressed;
 
         public void Awake()
         {
-            playAgainButton.onClick.AddListener(InvokeButtonClickAction);
+            mainMenuButton.onClick.AddListener(InvokeButtonClickAction);
         }
         private void OnDestroy()
         {
-            playAgainButton.onClick.RemoveListener(InvokeButtonClickAction);
+            mainMenuButton.onClick.RemoveListener(InvokeButtonClickAction);
         }
 
         private void InvokeButtonClickAction()
         {
-            PlayAgainButtonPressed();
+            MainMenuButtonPressed();
         }
-        public void SetFinalScore(int score)
+        public void SetFinalScore(int myScore, int opponentScore = -1, string playerName = "Your", string opponentName = "")
         {
-            finalScoreText.text = $"Final score: {score}";
+            finalScoreText.text = $"Your final score: {myScore}";
+            if(opponentScore != -1)
+            {
+                finalScoreText.text += $"\n{opponentName} final score: {opponentScore}";
+                if (myScore > opponentScore)
+                {
+                    finalScoreText.text += $"\n You won!!!";
+                } else if (myScore == opponentScore)
+                {
+                    finalScoreText.text += $"\n It's a draw :O";
+                } else
+                {
+                    finalScoreText.text += $"\n You lost :(";
+                }
+            } 
         }
 
     }

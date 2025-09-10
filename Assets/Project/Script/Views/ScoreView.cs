@@ -16,21 +16,6 @@ namespace Gazeus.DesafioMatch3.Views
         private Tweener multiplierTextScaleTweener;
         private Color multiplierTextTweenColor = new Color(1, 0.23529f, 1);
 
-        //private void Start()
-        //{
-        //    InitializeScoreView();
-        //}
-
-        //public void InitializeScoreView()
-        //{
-        //    scoreText.text = "Score: 0";
-        //    //Tweeners for fading the color  and changing the scale to represent the multiplier reseting
-        //    scoreMultiplierText.transform.localScale = Vector3.one;
-        //    scoreMultiplierText.color = Color.white;
-        //    UpdateScore(0);
-        //    UpdateScoreMultiplier(1);
-        //}
-
         private void KillTweensIfNotNull()
         {
             if (multiplierDecayColorTweener != null)
@@ -63,6 +48,7 @@ namespace Gazeus.DesafioMatch3.Views
             scoreMultiplierText.text = $"X{updatedScoreMultiplier}";
             if (updatedScoreMultiplier != 1)
             {
+                multiplierTextTweenColor = UnityEngine.Random.ColorHSV(0, 1, 0.8f, 1, 0.8f, 1);
                 //Change color to emphasize the multiplier
                 scoreMultiplierText.color = multiplierTextTweenColor;
                 scoreMultiplierText.transform.localScale = Vector3.one * 2;
