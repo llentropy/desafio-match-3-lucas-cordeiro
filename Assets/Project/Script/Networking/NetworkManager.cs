@@ -1,5 +1,9 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using TMPro;
 using Unity.Collections;
 using Unity.Networking.Transport;
@@ -9,7 +13,7 @@ using UnityEngine.SceneManagement;
 
 namespace Gazeus.DesafioMatch3
 {
-    enum ConnectionMode
+    public enum ConnectionMode
     {
         Client, Server, Disconnected
     }
@@ -18,21 +22,45 @@ namespace Gazeus.DesafioMatch3
     //https://docs.unity3d.com/Packages/com.unity.transport@2.5/manual/client-server-simple.html
     public class NetworkManager : MonoBehaviour
     {
-        [SerializeField] private TextMeshProUGUI _nameTextArea;
+        [SerializeField] private TMP_InputField _nameTextArea;
         [SerializeField] private TextMeshProUGUI _connectionMenuStatus;
+        [SerializeField] private TMP_InputField _hostAddressTextArea;
 
         public string PlayerName { private set; get; }
         public string OpponentName { private set; get; }
 
-        private ConnectionMode _connectionMode = ConnectionMode.Disconnected;
+        public ConnectionMode _connectionMode { private set; get; } = ConnectionMode.Disconnected;
 
         private FixedString128Bytes _queuedMessage = "";
 
         NetworkDriver _networkDriver;
         NetworkConnection _networkConnection;
+
+        public List<string> GetLocalIPAddresses()
+        {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+
+            List<string> localIps = new();
+            foreach (var ip in host.AddressList)
+            {
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    localIps.Add(ip.ToString());
+                }
+            }
+
+
+            return localIps;
+        }
         private void Awake()
         {
             DontDestroyOnLoad(gameObject);
+        }
+
+        public void StartOfflineMatch()
+        {
+            StopNetworking();
+            SceneManager.LoadScene("Gameplay");
         }
 
         private void SetQueuedMessage(string message)
@@ -51,7 +79,7 @@ namespace Gazeus.DesafioMatch3
         private void SetupPlayerName() {
             if (_nameTextArea.text.Length == 0)
             {
-                PlayerName = $"Player{Random.Range(0, 100)}";
+                PlayerName = $"Player{UnityEngine.Random.Range(0, 100)}";
             }
             else
             {
@@ -60,30 +88,85 @@ namespace Gazeus.DesafioMatch3
         }
         public void StartAsServer()
         {
-            _networkDriver = NetworkDriver.Create();
+            var settings = new NetworkSettings();
+            settings.WithNetworkConfigParameters(
+                connectTimeoutMS: 500,
+                maxConnectAttempts: 10,
+                disconnectTimeoutMS: 10000);
 
-            var endpoint = NetworkEndpoint.AnyIpv4.WithPort(GameConstants.DefaultConnectionPort);
-            if (_networkDriver.Bind(endpoint) != 0)
+            _networkDriver = NetworkDriver.Create(settings);
+
+            ushort connectionPort = GameConstants.DefaultConnectionPort;
+
+            var endpoint = NetworkEndpoint.AnyIpv4.WithPort(connectionPort);
+
+
+            while (!_networkDriver.Bound)
             {
-                Debug.LogError($"Failed to bind to port {GameConstants.DefaultConnectionPort}");
-                return;
+                try
+                {
+                    _networkDriver.Bind(endpoint);
+                    endpoint = NetworkEndpoint.AnyIpv4.WithPort((ushort)(connectionPort));
+                } catch
+                {
+                    connectionPort++;
+                    if (connectionPort > GameConstants.DefaultConnectionPort + 10)
+                    {
+                        Debug.LogError("Failed to bind to a port after 10 attempts");
+                        return;
+                    }
+                }
+                
             }
             _networkDriver.Listen();
 
             SetupPlayerName();
 
-            _connectionMenuStatus.text = $"Waiting for a player\nChosen name: {PlayerName}";
+            var ipList = GetLocalIPAddresses();
+            string myIps = "";
+
+            foreach(var ip in ipList)
+            {
+                myIps += $"\n{ip}:{connectionPort}";
+            }
+
+            _connectionMenuStatus.text = $"Chosen name: {PlayerName}\nWaiting for a player\nLocal IP(s): {myIps}";
 
             _connectionMode = ConnectionMode.Server;
 
             Debug.Log("Started Server");
         }
 
+        public void PopulateDefaultHostAddress()
+        {
+            var myIps = GetLocalIPAddresses();
+
+            _hostAddressTextArea.text = $"{myIps[0]}:{GameConstants.DefaultConnectionPort}";
+        }
+
         public void StartAsClient()
         {
             _networkDriver = NetworkDriver.Create();
 
-            var endpoint = NetworkEndpoint.LoopbackIpv4.WithPort(GameConstants.DefaultConnectionPort);
+            NetworkEndpoint endpoint;
+
+            
+
+            if(_hostAddressTextArea.text.Length > 0)
+            {
+                string[] splitAddress = _hostAddressTextArea.text.Split(":");
+                var ip = splitAddress[0];
+                Debug.Log(splitAddress[1]);
+
+                int port = int.Parse(splitAddress[1]);
+                
+
+                endpoint = NetworkEndpoint.Parse(ip, (ushort) port, NetworkFamily.Ipv4);
+            } else
+            {
+                endpoint = NetworkEndpoint.LoopbackIpv4.WithPort(GameConstants.DefaultConnectionPort);
+            }
+
             _networkConnection = _networkDriver.Connect(endpoint);
 
             SetupPlayerName();
@@ -145,9 +228,7 @@ namespace Gazeus.DesafioMatch3
                         break;
 
                     case NetworkEvent.Type.Disconnect:
-                        Debug.Log("Disconnected");
-                        _networkConnection = default;
-                        SceneManager.LoadScene("ModeSelect");
+                        Disconnect();
                         break;
                 }
             }
@@ -161,8 +242,20 @@ namespace Gazeus.DesafioMatch3
 
         }
 
+        private void Disconnect()
+        {
+            if (_networkConnection.IsCreated)
+            {
+                _networkConnection.Disconnect(_networkDriver);
+            }
+            _networkConnection = default;
+            Debug.Log("Disconnected");
+            SceneManager.LoadScene("MainMenu");
+        }
+
         private void OnDestroy()
         {
+            Disconnect();
             StopNetworking();
         }
 

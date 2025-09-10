@@ -9,21 +9,21 @@ namespace Gazeus.DesafioMatch3
     public class EndGameView : MonoBehaviour
     {
         [SerializeField] private TextMeshProUGUI finalScoreText;
-        [SerializeField] private Button playAgainButton;
-        public event Action PlayAgainButtonPressed;
+        [SerializeField] private Button mainMenuButton;
+        public event Action MainMenuButtonPressed;
 
         public void Awake()
         {
-            playAgainButton.onClick.AddListener(InvokeButtonClickAction);
+            mainMenuButton.onClick.AddListener(InvokeButtonClickAction);
         }
         private void OnDestroy()
         {
-            playAgainButton.onClick.RemoveListener(InvokeButtonClickAction);
+            mainMenuButton.onClick.RemoveListener(InvokeButtonClickAction);
         }
 
         private void InvokeButtonClickAction()
         {
-            PlayAgainButtonPressed();
+            MainMenuButtonPressed();
         }
         public void SetFinalScore(int score)
         {

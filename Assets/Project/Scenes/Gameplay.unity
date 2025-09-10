@@ -239,7 +239,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   finalScoreText: {fileID: 1408941104}
-  playAgainButton: {fileID: 976296305}
+  mainMenuButton: {fileID: 976296305}
 --- !u!1 &222412328
 GameObject:
   m_ObjectHideFlags: 0
@@ -297,7 +297,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Play Again
+  m_text: Main Menu
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 6d3d76328e2fcb74e871359ba57bb3ca, type: 2}
   m_sharedMaterial: {fileID: 1897782025044217500, guid: 6d3d76328e2fcb74e871359ba57bb3ca, type: 2}
@@ -860,7 +860,7 @@ GameObject:
   - component: {fileID: 976296306}
   - component: {fileID: 976296305}
   m_Layer: 5
-  m_Name: PlayAgainButton
+  m_Name: MainMenuButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2058,6 +2058,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _playerNames: {fileID: 494674545}
   _versusStatusMessage: {fileID: 1350791162}
+  PlayerColor: {r: 0, g: 1, b: 0, a: 1}
+  OpponentColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

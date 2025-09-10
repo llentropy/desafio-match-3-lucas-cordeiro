@@ -9,10 +9,13 @@ namespace Gazeus.DesafioMatch3
     {
         [SerializeField] TextMeshProUGUI _playerNames;
         [SerializeField] TextMeshProUGUI _versusStatusMessage;
+
+        [SerializeField] private Color PlayerColor = Color.green;
+        [SerializeField] private Color OpponentColor = Color.red;
         
         public void SetPlayerNames(string player1, string player2)
         {
-            _playerNames.text = $"{player1} VS {player2}";
+            _playerNames.text = $"<color=#{ColorUtility.ToHtmlStringRGB(PlayerColor)}>{player1}</color> VS <color=#{ColorUtility.ToHtmlStringRGB(OpponentColor)}>{player2}</color>";
         }
     }
 }

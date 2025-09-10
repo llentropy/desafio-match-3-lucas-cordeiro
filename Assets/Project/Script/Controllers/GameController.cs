@@ -44,10 +44,10 @@ namespace Gazeus.DesafioMatch3.Controllers
         {
             _gameEngine = new GameService();
             _boardView.TileClicked += OnTileClick;
-            _endGameView.PlayAgainButtonPressed += RestartMatch;
+            _endGameView.MainMenuButtonPressed += ExitMatch;
 
             _networkManager = FindAnyObjectByType<NetworkManager>();
-            if(_networkManager != null)
+            if(_networkManager != null && _networkManager._connectionMode != ConnectionMode.Disconnected)
             {
                 _gameMode = GameMode.Versus;
                 SetupVersusMode();
@@ -66,12 +66,17 @@ namespace Gazeus.DesafioMatch3.Controllers
         private void OnDestroy()
         {
             _boardView.TileClicked -= OnTileClick;
-            _endGameView.PlayAgainButtonPressed -= RestartMatch;
+            _endGameView.MainMenuButtonPressed -= ExitMatch;
         }
 
         private void Start()
         {
             StartMatch();
+        }
+
+        private void ExitMatch()
+        {
+            SceneManager.LoadScene("MainMenu");
         }
 
         private void RestartMatch()
