@@ -27,4 +27,4 @@ Selecting any two available tiles on the board should make these unblocked tiles
 
 My version also has a versus mode. In this mode, each combination made by a player sends an equivalent number of blocked tiles to the opponent. After the set ammount of time, the scores of both players are compared to elect a winner. This mode was tested with two instances on the same computer, and with two instances in different computers that are on the same local network. A demonstration of this mode can be seen below:
 
-![Versus Mode](/Doc/VersusMode.gif?raw=true "Versus Mode")
+![Versus Mode](/Doc/VersusMode.mp4?raw=true "Versus Mode")
