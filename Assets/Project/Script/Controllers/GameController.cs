@@ -34,6 +34,7 @@ namespace Gazeus.DesafioMatch3.Controllers
         private Coroutine multiplierDecayCoroutine;
 
         private float remainingMatchTime = GameConstants.MatchTime;
+        private float _lastUpdateClockTime;
 
         #region Unity
         private void Awake()
@@ -43,12 +44,17 @@ namespace Gazeus.DesafioMatch3.Controllers
             _endGameView.MainMenuButtonPressed += ExitMatch;
 
             _networkManager = FindAnyObjectByType<NetworkManager>();
-            if(_networkManager != null && _networkManager._connectionMode != ConnectionMode.Disconnected)
+            if(_networkManager != null && _networkManager.ConnectionMode != ConnectionMode.Disconnected)
             {
                 //Bind the events to the GameService and NetworkManager behaviours
                 _gameEngine.MatchGameMode = GameMode.Versus;
                 //_gameEngine.SendBlockedTilesToOpponnentEvent += (quantity) => SendBlockedTiles(quantity);
                 _networkManager.ReceivedBlockedTilesEvent += (quantity) => ReceiveBlockedTiles(quantity);
+                if(_networkManager.ConnectionMode == ConnectionMode.Client)
+                {
+                    _networkManager.ReceivedUpdatedMatchClockEvent += (clock) => ClientSetMatchClock(clock);
+                }
+
                 SetupVersusModeUI();
             } else
             {
@@ -58,7 +64,7 @@ namespace Gazeus.DesafioMatch3.Controllers
 
         private void SendBlockedTiles(int quantity)
         {
-            _networkManager.SetQueuedMessage($"SendBlockedTiles;{quantity}");
+            _networkManager.AddQueuedMessage($"SendBlockedTiles;{quantity}");
         }
 
         private void ReceiveBlockedTiles(int quantity)
@@ -92,13 +98,37 @@ namespace Gazeus.DesafioMatch3.Controllers
 
         private void Update()
         {
-            _timerView.UpdateTimerText(remainingMatchTime);
-            remainingMatchTime -= Time.deltaTime;
-            if(remainingMatchTime <= 0 && _isMatchRunning )
+            //If the game is not a client, update the match clock
+            if(!(_gameEngine.MatchGameMode == GameMode.Versus && _networkManager.ConnectionMode == ConnectionMode.Client))
+            {
+                UpdateMatchClock();
+            } 
+            if (remainingMatchTime <= 0 && _isMatchRunning)
             {
                 EndMatch();
             }
         }
+        //Called only for Single Player mode or for the Server in Versus Mode
+        private void UpdateMatchClock()
+        {
+            _timerView.UpdateTimerText(remainingMatchTime);
+            remainingMatchTime -= Time.deltaTime;
+            if (_gameEngine.MatchGameMode == GameMode.Versus && _networkManager.ConnectionMode == ConnectionMode.Server)
+            {
+                if(Time.time > (_lastUpdateClockTime + GameConstants.ClientUpdateClockInterval))
+                {
+                    _lastUpdateClockTime = Time.time;
+                    _networkManager.AddQueuedMessage($"SetMatchClock;{remainingMatchTime}");
+                }
+            }
+        }
+
+        private void ClientSetMatchClock(float serverRemainingMatchTime)
+        {
+            _timerView.UpdateTimerText(remainingMatchTime);
+            remainingMatchTime = serverRemainingMatchTime;
+        }
+
         #endregion
 
         private void StartMatch()

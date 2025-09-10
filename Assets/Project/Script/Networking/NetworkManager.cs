@@ -27,12 +27,14 @@ namespace Gazeus.DesafioMatch3
         [SerializeField] private TMP_InputField _hostAddressTextArea;
 
         public event Action<int> ReceivedBlockedTilesEvent;
+        public event Action<float> ReceivedUpdatedMatchClockEvent;
         public string PlayerName { private set; get; }
         public string OpponentName { private set; get; }
 
-        public ConnectionMode _connectionMode { private set; get; } = ConnectionMode.Disconnected;
+        public ConnectionMode ConnectionMode { private set; get; } = ConnectionMode.Disconnected;
 
-        private FixedString128Bytes _queuedMessage = "";
+
+        private List<FixedString128Bytes> _queuedMessages = new();
 
         NetworkDriver _networkDriver;
         NetworkConnection _networkConnection;
@@ -64,17 +66,14 @@ namespace Gazeus.DesafioMatch3
             SceneManager.LoadScene("Gameplay");
         }
 
-        public void SetQueuedMessage(string message)
+        public void AddQueuedMessage(string message)
         {
-            if (_queuedMessage.IsEmpty)
-            {
-                _queuedMessage = message;
-            }
+            _queuedMessages.Add(message);
         }
 
-        private void EmptyQueuedMessage()
+        private void EmptyQueuedMessages()
         {
-            _queuedMessage = "";
+            _queuedMessages = new();
         }
 
         private void SetupPlayerName() {
@@ -133,7 +132,7 @@ namespace Gazeus.DesafioMatch3
 
             _connectionMenuStatus.text = $"Chosen name: {PlayerName}\nWaiting for a player\nLocal IP(s): {myIps}";
 
-            _connectionMode = ConnectionMode.Server;
+            ConnectionMode = ConnectionMode.Server;
 
             Debug.Log("Started Server");
         }
@@ -169,14 +168,14 @@ namespace Gazeus.DesafioMatch3
             _networkConnection = _networkDriver.Connect(endpoint);
 
             SetupPlayerName();
-            _connectionMode = ConnectionMode.Client;
+            ConnectionMode = ConnectionMode.Client;
 
             Debug.Log("Started Client");
         }
 
         public void StopNetworking()
         {
-            _connectionMode = ConnectionMode.Disconnected;
+            ConnectionMode = ConnectionMode.Disconnected;
 
             _networkDriver.Dispose();
 
@@ -192,14 +191,14 @@ namespace Gazeus.DesafioMatch3
             _networkDriver.ScheduleUpdate().Complete();
 
 
-            if (_connectionMode == ConnectionMode.Server && !_networkConnection.IsCreated)
+            if (ConnectionMode == ConnectionMode.Server && !_networkConnection.IsCreated)
             {
                 NetworkConnection connection;
                 while ((connection = _networkDriver.Accept()) != default)
                 {
                     _networkConnection = connection;
                     Debug.Log("Accepted connection from client");
-                    SetQueuedMessage($"ConnectedAs;{PlayerName}");
+                    AddQueuedMessage($"ConnectedAs;{PlayerName}");
                 }
             }
 
@@ -217,12 +216,12 @@ namespace Gazeus.DesafioMatch3
                 {
                     case NetworkEvent.Type.Connect:
                         Debug.Log("Connected to server");
-                        SetQueuedMessage($"ConnectedAs;{PlayerName}");
+                        AddQueuedMessage($"ConnectedAs;{PlayerName}");
                         break;
 
                     case NetworkEvent.Type.Data:
                         FixedString128Bytes message = streamReader.ReadFixedString128();
-                        Debug.Log($"Received message {message} from client");
+                        Debug.Log($"Received message {message}");
                         ParseMessage(message);
                         break;
 
@@ -231,13 +230,16 @@ namespace Gazeus.DesafioMatch3
                         break;
                 }
             }
-            if (!_queuedMessage.IsEmpty)
+
+            foreach(var queuedMessage in _queuedMessages)
             {
                 _networkDriver.BeginSend(NetworkPipeline.Null, _networkConnection, out var writer);
-                writer.WriteFixedString128(_queuedMessage);
+                writer.WriteFixedString128(queuedMessage);
                 _networkDriver.EndSend(writer);
-                EmptyQueuedMessage();
             }
+            
+            EmptyQueuedMessages();
+            
 
         }
 
@@ -276,6 +278,10 @@ namespace Gazeus.DesafioMatch3
                     int receivedBlockedTiles = int.Parse(messageParts[1]);
                     ReceivedBlockedTilesEvent.Invoke(receivedBlockedTiles);
                     Debug.Log($"Received {receivedBlockedTiles} blocked tiles");
+                    break;
+                case "SetMatchClock":
+                    float receivedMatchClock = float.Parse(messageParts[1]);
+                    ReceivedUpdatedMatchClockEvent.Invoke(receivedMatchClock);
                     break;
             }
         }

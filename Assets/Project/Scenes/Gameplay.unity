@@ -1315,7 +1315,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: StatusMessages
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 6d3d76328e2fcb74e871359ba57bb3ca, type: 2}
   m_sharedMaterial: {fileID: 1897782025044217500, guid: 6d3d76328e2fcb74e871359ba57bb3ca, type: 2}
