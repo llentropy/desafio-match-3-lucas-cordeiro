@@ -20,3 +20,11 @@ Finnally, each successful combination generates blocked tiles, that will not gen
 tiles do not make combinations as soon as they are unblocked: the player has to interact with the board in order for them to combine again. This was a deliberate choice, as to not make the board update on its own, but this might be a bit confusing. An example of this happening can be seen below (notice the four yellow blocks on the fourth row):
 
 ![Unblocking tiles](/Doc/UnblockingTiles.gif?raw=true "Unblocking tiles")
+
+Selecting any two available tiles on the board should make these unblocked tiles combine again
+
+### Versus mode
+
+My version also has a versus mode. In this mode, each combination made by a player sends an equivalent number of blocked tiles to the opponent. After the set ammount of time, the scores of both players are compared to elect a winner. This mode was tested with two instances on the same computer, and with two instances in different computers that are on the same local network. A demonstration of this mode can be seen below:
+
+![Versus Mode](/Doc/VersusMode.gif?raw=true "Versus Mode")
