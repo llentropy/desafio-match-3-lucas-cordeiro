@@ -1,13 +1,10 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
 namespace Gazeus.DesafioMatch3
 {
     public static class GameConstants
     {
+        #region Constants For All Modes
         //Base value for incrementing score
-        public const int BaseScoreIncrementPerPiece = 100 ;
+        public const int BaseScoreIncrementPerPiece = 100;
 
         //Score multiplier decay time in seconds. It becomes 1X after this timespan
         public const float TimeForMultiplierDecay = 3;
@@ -16,17 +13,20 @@ namespace Gazeus.DesafioMatch3
         public const float MatchTime = 120;
 
         //Chance of generating a new blocked tile. 1.0f means a blocked tile is always generated
-        public const float ProbabilityToGenerateBlockedTile = 0.3f;
+        public const float ProbabilityToGenerateBlockedTile = 0.7f;
 
         //Default time for a blocked tile to become unblocked
         public const float BlockedTileDuration = 15;
 
+        #endregion
+
+        #region Single Player Constants
         //In a single player game, this controls the maximum quantity of blocked tiles
         //each score generates
         public const int MaxBlockedTilesGeneratedPerScore = 6;
+        #endregion
 
-
-        #region MultiplayerConstants
+        #region Multiplayer Constants
         //Default versus mode connection port
         //The actual port will be higher in case this default is already in use
         public const int DefaultConnectionPort = 9000;

@@ -2,7 +2,6 @@ using DG.Tweening;
 using Gazeus.DesafioMatch3.Core;
 using Gazeus.DesafioMatch3.Models;
 using Gazeus.DesafioMatch3.Views;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -11,7 +10,6 @@ using UnityEngine.SceneManagement;
 
 namespace Gazeus.DesafioMatch3.Controllers
 {
-    
     public class GameController : MonoBehaviour
     {
         [SerializeField] private BoardView _boardView;
@@ -21,7 +19,6 @@ namespace Gazeus.DesafioMatch3.Controllers
         [SerializeField] private VersusModeStatusView _versusModeStatusView;
         private NetworkManager _networkManager;
 
-
         [SerializeField] private int _boardHeight = 10;
         [SerializeField] private int _boardWidth = 10;
 
@@ -29,10 +26,9 @@ namespace Gazeus.DesafioMatch3.Controllers
         private bool _isAnimating;
         private int _selectedX = -1;
         private int _selectedY = -1;
+
         private bool _isMatchRunning = true;
-
         private Coroutine multiplierDecayCoroutine;
-
         private float remainingMatchTime = GameConstants.MatchTime;
         private float _lastUpdateClockTime;
 
@@ -61,52 +57,10 @@ namespace Gazeus.DesafioMatch3.Controllers
             }
         }
 
-        private void SendBlockedTiles(int quantity)
-        {
-            _networkManager.AddQueuedMessage($"SendBlockedTiles;{quantity}");
-        }
-
-        private void SendFinalScore(int finalScore)
-        {
-            _networkManager.AddQueuedMessage($"SendFinalScore;{finalScore}");
-
-        }
-
-        private void ReceiveBlockedTiles(int quantity)
-        {
-            _versusModeStatusView.UpdateStatusForReceivedBlockedTiles(quantity, _networkManager.OpponentName);
-            _gameEngine.IncrementQuantityOfNextBlockedTiles(quantity);
-        }
-
-        private void SetupVersusModeUI()
-        {
-            _versusModeStatusView.gameObject.SetActive(true);
-            _versusModeStatusView.SetPlayerNames(_networkManager.PlayerName, _networkManager.OpponentName);
-        }
-
-        private void OnDestroy()
-        {
-            _boardView.TileClicked -= OnTileClick;
-            _endGameView.MainMenuButtonPressed -= ExitMatch;
-        }
-
         private void Start()
         {
             StartMatch();
         }
-
-        private void ExitMatch()
-        {
-            if(_gameEngine.MatchGameMode == GameMode.Versus)
-            {
-                _networkManager.Disconnect();
-            } else
-            {
-                SceneManager.LoadScene("MainMenu");
-            }
-        }
-
-
         private void Update()
         {
             //If the game is not a client, update the match clock
@@ -119,29 +73,15 @@ namespace Gazeus.DesafioMatch3.Controllers
                 EndMatch();
             }
         }
-        //Called only for Single Player mode or for the Server in Versus Mode
-        private void UpdateMatchClock()
+        private void OnDestroy()
         {
-            _timerView.UpdateTimerText(remainingMatchTime);
-            remainingMatchTime -= Time.deltaTime;
-            if (_gameEngine.MatchGameMode == GameMode.Versus && _networkManager.ConnectionMode == ConnectionMode.Server)
-            {
-                if(Time.time > (_lastUpdateClockTime + GameConstants.ClientUpdateClockInterval))
-                {
-                    _lastUpdateClockTime = Time.time;
-                    _networkManager.AddQueuedMessage($"SetMatchClock;{remainingMatchTime}");
-                }
-            }
-        }
-
-        private void ClientSetMatchClock(float serverRemainingMatchTime)
-        {
-            _timerView.UpdateTimerText(remainingMatchTime);
-            remainingMatchTime = serverRemainingMatchTime;
+            _boardView.TileClicked -= OnTileClick;
+            _endGameView.MainMenuButtonPressed -= ExitMatch;
         }
 
         #endregion
 
+        #region Essential game behaviour
         private void StartMatch()
         {
             _isMatchRunning = true;
@@ -178,6 +118,20 @@ namespace Gazeus.DesafioMatch3.Controllers
             }
         }
 
+        //Called only for Single Player mode or for the Server in Versus Mode.
+        private void UpdateMatchClock()
+        {
+            _timerView.UpdateTimerText(remainingMatchTime);
+            remainingMatchTime -= Time.deltaTime;
+            if (_gameEngine.MatchGameMode == GameMode.Versus && _networkManager.ConnectionMode == ConnectionMode.Server)
+            {
+                if (Time.time > (_lastUpdateClockTime + GameConstants.ClientUpdateClockInterval))
+                {
+                    _lastUpdateClockTime = Time.time;
+                    _networkManager.AddQueuedMessage($"SetMatchClock;{remainingMatchTime}");
+                }
+            }
+        }
         private IEnumerator ResetScoreMultiplierAfterDecayTime()
         {
             //This coroutine will always reset the multiplier after the decay time, unless it is cancelled by a new score
@@ -185,7 +139,49 @@ namespace Gazeus.DesafioMatch3.Controllers
             _gameEngine.ResetScoreMultiplier();
             _scoreView.UpdateScoreMultiplier(1);
         }
+        private void ExitMatch()
+        {
+            if (_gameEngine.MatchGameMode == GameMode.Versus)
+            {
+                _networkManager.Disconnect();
+            }
+            else
+            {
+                SceneManager.LoadScene("MainMenu");
+            }
+        }
+        #endregion
 
+        #region Multiplayer event callbacks
+        private void SendBlockedTiles(int quantity)
+        {
+            _networkManager.AddQueuedMessage($"SendBlockedTiles;{quantity}");
+        }
+
+        private void SendFinalScore(int finalScore)
+        {
+            _networkManager.AddQueuedMessage($"SendFinalScore;{finalScore}");
+
+        }
+
+        private void ReceiveBlockedTiles(int quantity)
+        {
+            _versusModeStatusView.UpdateStatusForReceivedBlockedTiles(quantity, _networkManager.OpponentName);
+            _gameEngine.IncrementQuantityOfNextBlockedTiles(quantity);
+        }
+
+        private void SetupVersusModeUI()
+        {
+            _versusModeStatusView.gameObject.SetActive(true);
+            _versusModeStatusView.SetPlayerNames(_networkManager.PlayerName, _networkManager.OpponentName);
+        }
+        private void ClientSetMatchClock(float serverRemainingMatchTime)
+        {
+            _timerView.UpdateTimerText(remainingMatchTime);
+            remainingMatchTime = serverRemainingMatchTime;
+        }
+
+        #endregion
         private void AnimateBoard(List<BoardSequence> boardSequences, int index, Action onComplete)
         {
             BoardSequence boardSequence = boardSequences[index];
@@ -212,11 +208,10 @@ namespace Gazeus.DesafioMatch3.Controllers
                 if(_gameEngine.MatchGameMode == GameMode.Versus)
                 {
                     sequence.onComplete += () => {
-
+                        //After the animation is done, send the blocked tiles to the opponent
                         SendBlockedTiles(totalOfTilesToSend);
                         onComplete();
-                        
-                        };
+                    };
                 }
                 else
                 {

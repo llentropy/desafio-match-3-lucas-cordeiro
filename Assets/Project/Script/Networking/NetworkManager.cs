@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -37,156 +36,18 @@ namespace Gazeus.DesafioMatch3
 
         Regex ipRegex = new Regex(@"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b");
 
+        //List of messages to send to the other endpoint at the next update cycle
         private List<FixedString128Bytes> _queuedMessages = new();
 
         NetworkDriver _networkDriver;
         NetworkConnection _networkConnection;
 
-        public List<string> GetLocalIPAddresses()
-        {
-            var host = Dns.GetHostEntry(Dns.GetHostName());
-
-            List<string> localIps = new();
-            foreach (var address in host.AddressList)
-            {
-                if (address.AddressFamily == AddressFamily.InterNetwork)
-                {
-                    string ipString = address.ToString();
-                    if (ipRegex.Match(ipString).Success)
-                    {
-                        localIps.Add(ipString);
-                    }
-                }
-            }
-
-
-            return localIps;
-        }
+        #region Unity
         private void Awake()
         {
+            //Important to keep the multiplayer service when loading new scenes
             DontDestroyOnLoad(gameObject);
         }
-
-        public void StartOfflineMatch()
-        {
-            SceneManager.LoadScene("Gameplay");
-        }
-
-        public void AddQueuedMessage(string message)
-        {
-            _queuedMessages.Add(message);
-        }
-
-        private void EmptyQueuedMessages()
-        {
-            _queuedMessages = new();
-        }
-
-        private void SetupPlayerName() {
-            if (_nameTextArea.text.Length == 0)
-            {
-                PlayerName = $"Player{UnityEngine.Random.Range(0, 100)}";
-            }
-            else
-            {
-                PlayerName = _nameTextArea.text;
-            }
-        }
-        public void StartAsServer()
-        {
-            var settings = new NetworkSettings();
-            settings.WithNetworkConfigParameters(
-                connectTimeoutMS: 500,
-                maxConnectAttempts: 10,
-                disconnectTimeoutMS: 1000);
-
-            _networkDriver = NetworkDriver.Create(settings);
-
-            ushort connectionPort = GameConstants.DefaultConnectionPort;
-
-            var endpoint = NetworkEndpoint.AnyIpv4.WithPort(connectionPort);
-
-
-            while (!_networkDriver.Bound)
-            {
-                try
-                {
-                    _networkDriver.Bind(endpoint);
-                    endpoint = NetworkEndpoint.AnyIpv4.WithPort((ushort)(connectionPort));
-                } catch
-                {
-                    connectionPort++;
-                    if (connectionPort > GameConstants.DefaultConnectionPort + 10)
-                    {
-                        Debug.LogError("Failed to bind to a port after 10 attempts");
-                        return;
-                    }
-                }
-                
-            }
-            _networkDriver.Listen();
-
-            SetupPlayerName();
-
-            var ipList = GetLocalIPAddresses();
-            string myIps = "";
-
-            foreach(var ip in ipList)
-            {
-                myIps += $"\n{ip}:{connectionPort}";
-            }
-
-            _connectionMenuStatus.text = $"Chosen name: {PlayerName}\nWaiting for a player\nLocal IP(s): {myIps}";
-
-            ConnectionMode = ConnectionMode.Server;
-
-            Debug.Log("Started Server");
-        }
-
-        public void PopulateDefaultHostAddress()
-        {
-            var myIps = GetLocalIPAddresses();
-            string firstMatchedIp = "";
-            
-            if(myIps.Count > 0)
-            {
-                firstMatchedIp = myIps.Last();
-            } else {
-                firstMatchedIp = "192.168.0.0";
-            }
-
-            _hostAddressTextArea.text = $"{firstMatchedIp}:{GameConstants.DefaultConnectionPort}";
-        }
-
-        public void StartAsClient()
-        {
-            _networkDriver = NetworkDriver.Create();
-
-            NetworkEndpoint endpoint;
-
-            if(_hostAddressTextArea.text.Length > 0)
-            {
-                string[] splitAddress = _hostAddressTextArea.text.Split(":");
-                var ip = splitAddress[0];
-                Debug.Log(splitAddress[1]);
-
-                int port = int.Parse(splitAddress[1]);
-                
-
-                endpoint = NetworkEndpoint.Parse(ip, (ushort) port, NetworkFamily.Ipv4);
-            } else
-            {
-                endpoint = NetworkEndpoint.LoopbackIpv4.WithPort(GameConstants.DefaultConnectionPort);
-            }
-
-            _networkConnection = _networkDriver.Connect(endpoint);
-
-            SetupPlayerName();
-            ConnectionMode = ConnectionMode.Client;
-
-            Debug.Log("Started Client");
-        }
-
         void Update()
         {
             if (!_networkDriver.IsCreated)
@@ -246,33 +107,23 @@ namespace Gazeus.DesafioMatch3
             
             EmptyQueuedMessages();
         }
-
-        public void Disconnect()
-        {
-            if (_networkConnection.IsCreated)
-            {
-                _networkConnection.Disconnect(_networkDriver);
-            }
-            _networkConnection = default;
-
-            StopNetworking();
-
-            SceneManager.LoadScene("MainMenu");
-        }
-
-        public void StopNetworking()
-        {
-            ConnectionMode = ConnectionMode.Disconnected;
-
-            _networkDriver.Dispose();
-
-            Debug.Log("network communications stopped");
-        }
-
         private void OnDestroy()
         {
             Disconnect();
         }
+        #endregion
+
+        #region Message manipulation
+        public void AddQueuedMessage(string message)
+        {
+            _queuedMessages.Add(message);
+        }
+
+        private void EmptyQueuedMessages()
+        {
+            _queuedMessages = new();
+        }
+
         private void ParseMessage(FixedString128Bytes message)
         {
             string messageAsString = message.ToString();
@@ -300,5 +151,166 @@ namespace Gazeus.DesafioMatch3
                     break;
             }
         }
+        #endregion
+
+        #region Setup helpers
+        public List<string> GetLocalIPAddresses()
+        {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+
+            List<string> localIps = new();
+            foreach (var address in host.AddressList)
+            {
+                if (address.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    string ipString = address.ToString();
+                    if (ipRegex.Match(ipString).Success)
+                    {
+                        localIps.Add(ipString);
+                    }
+                }
+            }
+
+            return localIps;
+        }
+
+        private void SetupPlayerName() {
+            if (_nameTextArea.text.Length == 0)
+            {
+                PlayerName = $"Player{UnityEngine.Random.Range(0, 100)}";
+            }
+            else
+            {
+                PlayerName = _nameTextArea.text;
+            }
+        }
+
+        public void PopulateDefaultHostAddress()
+        {
+            var myIps = GetLocalIPAddresses();
+            string firstMatchedIp = "";
+            
+            if(myIps.Count > 0)
+            {
+                firstMatchedIp = myIps.Last();
+            } else {
+                firstMatchedIp = "192.168.0.0";
+            }
+
+            _hostAddressTextArea.text = $"{firstMatchedIp}:{GameConstants.DefaultConnectionPort}";
+        }
+
+        #endregion
+
+        #region Match start functions
+        public void StartOfflineMatch()
+        {
+            SceneManager.LoadScene("Gameplay");
+        }
+
+        public void StartAsServer()
+        {
+            var settings = new NetworkSettings();
+            settings.WithNetworkConfigParameters(
+                connectTimeoutMS: 500,
+                maxConnectAttempts: 10,
+                disconnectTimeoutMS: 1000);
+
+            _networkDriver = NetworkDriver.Create(settings);
+
+            ushort connectionPort = GameConstants.DefaultConnectionPort;
+
+            var endpoint = NetworkEndpoint.AnyIpv4.WithPort(connectionPort);
+
+            while (!_networkDriver.Bound)
+            {
+                try
+                {
+                    _networkDriver.Bind(endpoint);
+                    endpoint = NetworkEndpoint.AnyIpv4.WithPort((ushort)(connectionPort));
+                } catch
+                {
+                    connectionPort++;
+                    if (connectionPort > GameConstants.DefaultConnectionPort + 10)
+                    {
+                        Debug.LogError("Failed to bind to a port after 10 attempts");
+                        return;
+                    }
+                }
+                
+            }
+            _networkDriver.Listen();
+
+            SetupPlayerName();
+
+            var ipList = GetLocalIPAddresses();
+            string myIps = "";
+
+            foreach(var ip in ipList)
+            {
+                myIps += $"\n{ip}:{connectionPort}";
+            }
+
+            _connectionMenuStatus.text = $"Chosen name: {PlayerName}\nWaiting for a player\nLocal IP(s): {myIps}";
+
+            ConnectionMode = ConnectionMode.Server;
+
+            Debug.Log("Started Server");
+        }
+
+        public void StartAsClient()
+        {
+            _networkDriver = NetworkDriver.Create();
+
+            NetworkEndpoint endpoint;
+
+            if(_hostAddressTextArea.text.Length > 0)
+            {
+                string[] splitAddress = _hostAddressTextArea.text.Split(":");
+                var ip = splitAddress[0];
+                Debug.Log(splitAddress[1]);
+
+                int port = int.Parse(splitAddress[1]);
+                
+
+                endpoint = NetworkEndpoint.Parse(ip, (ushort) port, NetworkFamily.Ipv4);
+            } else
+            {
+                endpoint = NetworkEndpoint.LoopbackIpv4.WithPort(GameConstants.DefaultConnectionPort);
+            }
+
+            _networkConnection = _networkDriver.Connect(endpoint);
+
+            SetupPlayerName();
+            ConnectionMode = ConnectionMode.Client;
+
+            Debug.Log("Started Client");
+        }
+        #endregion
+
+        #region Disconnection handlers
+        public void Disconnect()
+        {
+            if (_networkConnection.IsCreated)
+            {
+                _networkConnection.Disconnect(_networkDriver);
+            }
+            _networkConnection = default;
+
+            StopNetworking();
+
+            SceneManager.LoadScene("MainMenu");
+        }
+
+        public void StopNetworking()
+        {
+            ConnectionMode = ConnectionMode.Disconnected;
+
+            _networkDriver.Dispose();
+
+            Debug.Log("network communications stopped");
+        }
+        #endregion
+
     }
 }

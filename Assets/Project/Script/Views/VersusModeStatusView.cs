@@ -1,8 +1,5 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
-using System;
 using DG.Tweening;
 
 namespace Gazeus.DesafioMatch3
