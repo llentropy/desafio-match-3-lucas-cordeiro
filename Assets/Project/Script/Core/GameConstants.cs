@@ -16,7 +16,7 @@ namespace Gazeus.DesafioMatch3
         public const float MatchTime = 120;
 
         //Chance of generating a new blocked tile. 1.0f means a blocked tile is always generated
-        public const float ProbabilityToGenerateBlockedTile = 0.3f;
+        public const float ProbabilityToGenerateBlockedTile = 0.7f;
 
         //Default time for a blocked tile to become unblocked
         public const float BlockedTileDuration = 15;
