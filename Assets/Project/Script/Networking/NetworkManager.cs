@@ -26,6 +26,7 @@ namespace Gazeus.DesafioMatch3
         [SerializeField] private TextMeshProUGUI _connectionMenuStatus;
         [SerializeField] private TMP_InputField _hostAddressTextArea;
 
+        public event Action<int> ReceivedBlockedTilesEvent;
         public string PlayerName { private set; get; }
         public string OpponentName { private set; get; }
 
@@ -63,7 +64,7 @@ namespace Gazeus.DesafioMatch3
             SceneManager.LoadScene("Gameplay");
         }
 
-        private void SetQueuedMessage(string message)
+        public void SetQueuedMessage(string message)
         {
             if (_queuedMessage.IsEmpty)
             {
@@ -149,8 +150,6 @@ namespace Gazeus.DesafioMatch3
             _networkDriver = NetworkDriver.Create();
 
             NetworkEndpoint endpoint;
-
-            
 
             if(_hostAddressTextArea.text.Length > 0)
             {
@@ -259,6 +258,8 @@ namespace Gazeus.DesafioMatch3
             StopNetworking();
         }
 
+
+
         private void ParseMessage(FixedString128Bytes message)
         {
             string messageAsString = message.ToString();
@@ -268,8 +269,13 @@ namespace Gazeus.DesafioMatch3
             {
                 case "ConnectedAs":
                     OpponentName = messageParts[1];
-                    Debug.Log(OpponentName);
+                    Debug.Log($"Playing against {OpponentName}");
                     SceneManager.LoadScene("Gameplay");
+                    break;
+                case "SendBlockedTiles":
+                    int receivedBlockedTiles = int.Parse(messageParts[1]);
+                    ReceivedBlockedTilesEvent.Invoke(receivedBlockedTiles);
+                    Debug.Log($"Received {receivedBlockedTiles} blocked tiles");
                     break;
             }
         }
