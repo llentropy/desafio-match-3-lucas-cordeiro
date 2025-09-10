@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Text.RegularExpressions;
 using TMPro;
 using Unity.Collections;
 using Unity.Networking.Transport;
@@ -33,6 +34,7 @@ namespace Gazeus.DesafioMatch3
 
         public ConnectionMode ConnectionMode { private set; get; } = ConnectionMode.Disconnected;
 
+        Regex ipRegex = new Regex(@"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b");
 
         private List<FixedString128Bytes> _queuedMessages = new();
 
@@ -44,11 +46,15 @@ namespace Gazeus.DesafioMatch3
             var host = Dns.GetHostEntry(Dns.GetHostName());
 
             List<string> localIps = new();
-            foreach (var ip in host.AddressList)
+            foreach (var address in host.AddressList)
             {
-                if (ip.AddressFamily == AddressFamily.InterNetwork)
+                if (address.AddressFamily == AddressFamily.InterNetwork)
                 {
-                    localIps.Add(ip.ToString());
+                    string ipString = address.ToString();
+                    if (ipRegex.Match(ipString).Success)
+                    {
+                        localIps.Add(ipString);
+                    }
                 }
             }
 
@@ -140,8 +146,16 @@ namespace Gazeus.DesafioMatch3
         public void PopulateDefaultHostAddress()
         {
             var myIps = GetLocalIPAddresses();
+            string firstMatchedIp = "";
+            
+            if(myIps.Count > 0)
+            {
+                firstMatchedIp = myIps.Last();
+            } else {
+                firstMatchedIp = "192.168.0.0";
+            }
 
-            _hostAddressTextArea.text = $"{myIps[0]}:{GameConstants.DefaultConnectionPort}";
+            _hostAddressTextArea.text = $"{firstMatchedIp}:{GameConstants.DefaultConnectionPort}";
         }
 
         public void StartAsClient()
@@ -188,7 +202,10 @@ namespace Gazeus.DesafioMatch3
             {
                 return;
             }
+            
             _networkDriver.ScheduleUpdate().Complete();
+            
+            
 
 
             if (ConnectionMode == ConnectionMode.Server && !_networkConnection.IsCreated)
