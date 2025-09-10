@@ -1,8 +1,6 @@
-using System;
 using System.Collections.Generic;
 using Gazeus.DesafioMatch3.Models;
 using UnityEngine;
-using UnityEngine.PlayerLoop;
 using Random = UnityEngine.Random;
 
 namespace Gazeus.DesafioMatch3.Core
@@ -17,34 +15,13 @@ namespace Gazeus.DesafioMatch3.Core
         private List<List<Tile>> _boardTiles;
         private List<int> _tilesTypes;
         private int _tileCount;
+
         private int scoreMultiplier = 1;
         public int GameScore { get; private set; } = 0;
-
         private int quantityOfNextBlockedTiles = 0;
-
         public GameMode MatchGameMode = GameMode.SinglePlayer;
 
-        public void IncrementQuantityOfNextBlockedTiles(int increment)
-        {
-            quantityOfNextBlockedTiles += increment;
-        }
-
-        public bool IsTileBlocked(int x, int y)
-        {
-            Tile tile = _boardTiles[y][x];
-            return tile.IsBlocked;
-        }
-        public void RevalidateBlockedTiles(float timestamp)
-        {
-            foreach (var tileList in _boardTiles) {
-                foreach (var tile in tileList) { 
-                    if(tile.IsBlocked && timestamp > (tile.BlockedStatusDuration + tile.SpawnTimestamp))
-                    {
-                        tile.IsBlocked = false;
-                    }
-                }
-            }
-        }
+        #region Main game behaviour
         public bool IsValidMovement(int fromX, int fromY, int toX, int toY, float timestamp)
         {
             List<List<Tile>> newBoard = CopyBoard(_boardTiles);
@@ -89,41 +66,6 @@ namespace Gazeus.DesafioMatch3.Core
         {
             GameScore = 0;
         }
-
-        public void ResetScoreMultiplier()
-        {
-            scoreMultiplier = 1;
-        }
-
-        private void CalculateUpdatedScore(List<Tile> tilesToScore)
-        {
-            if(MatchGameMode == GameMode.SinglePlayer)
-            {
-                quantityOfNextBlockedTiles += Random.Range(1, GameConstants.MaxBlockedTilesGeneratedPerScore);
-            }
-
-            int scoreIncrement = 0;
-            Dictionary<int, int> quantityPerType = new();
-            foreach(var tile in tilesToScore)
-            {
-                if (!quantityPerType.ContainsKey(tile.Type))
-                {
-                    quantityPerType[tile.Type] = 1;
-                } else
-                {
-                    quantityPerType[tile.Type] = quantityPerType[tile.Type] + 1;
-                }
-            }
-
-            foreach(var type in quantityPerType.Keys)
-            {
-                scoreMultiplier++;
-                scoreIncrement += GameConstants.BaseScoreIncrementPerPiece * quantityPerType[type] * scoreMultiplier;
-            }
-
-            GameScore += scoreIncrement;
-        }
-
         public List<BoardSequence> SwapTile(int fromX, int fromY, int toX, int toY)
         {
             List<List<Tile>> newBoard = CopyBoard(_boardTiles);
@@ -376,5 +318,70 @@ namespace Gazeus.DesafioMatch3.Core
 
             return false;
         }
+        #endregion
+
+        #region Score management
+        public void ResetScoreMultiplier()
+        {
+            scoreMultiplier = 1;
+        }
+
+        private void CalculateUpdatedScore(List<Tile> tilesToScore)
+        {
+            if(MatchGameMode == GameMode.SinglePlayer)
+            {
+                quantityOfNextBlockedTiles += Random.Range(1, GameConstants.MaxBlockedTilesGeneratedPerScore);
+            }
+
+            int scoreIncrement = 0;
+            Dictionary<int, int> quantityPerType = new();
+            foreach(var tile in tilesToScore)
+            {
+                if (!quantityPerType.ContainsKey(tile.Type))
+                {
+                    quantityPerType[tile.Type] = 1;
+                } else
+                {
+                    quantityPerType[tile.Type] = quantityPerType[tile.Type] + 1;
+                }
+            }
+
+            foreach(var type in quantityPerType.Keys)
+            {
+                scoreMultiplier++;
+                scoreIncrement += GameConstants.BaseScoreIncrementPerPiece * quantityPerType[type] * scoreMultiplier;
+            }
+
+            GameScore += scoreIncrement;
+        }
+
+        #endregion
+
+        #region Blocked tiles management
+        public void RevalidateBlockedTiles(float timestamp)
+        {
+            foreach (var tileList in _boardTiles)
+            {
+                foreach (var tile in tileList)
+                {
+                    if (tile.IsBlocked && timestamp > (tile.BlockedStatusDuration + tile.SpawnTimestamp))
+                    {
+                        tile.IsBlocked = false;
+                    }
+                }
+            }
+        }
+        public void IncrementQuantityOfNextBlockedTiles(int increment)
+        {
+            quantityOfNextBlockedTiles += increment;
+        }
+        public bool IsTileBlocked(int x, int y)
+        {
+            Tile tile = _boardTiles[y][x];
+            return tile.IsBlocked;
+        }
+
+        #endregion
+
     }
 }
