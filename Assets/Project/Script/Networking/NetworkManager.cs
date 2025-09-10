@@ -98,7 +98,7 @@ namespace Gazeus.DesafioMatch3
             settings.WithNetworkConfigParameters(
                 connectTimeoutMS: 500,
                 maxConnectAttempts: 10,
-                disconnectTimeoutMS: 10000);
+                disconnectTimeoutMS: 5000);
 
             _networkDriver = NetworkDriver.Create(settings);
 
