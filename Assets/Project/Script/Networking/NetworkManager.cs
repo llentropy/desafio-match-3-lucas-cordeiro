@@ -98,7 +98,7 @@ namespace Gazeus.DesafioMatch3
             settings.WithNetworkConfigParameters(
                 connectTimeoutMS: 500,
                 maxConnectAttempts: 10,
-                disconnectTimeoutMS: 5000);
+                disconnectTimeoutMS: 1000);
 
             _networkDriver = NetworkDriver.Create(settings);
 
@@ -205,8 +205,6 @@ namespace Gazeus.DesafioMatch3
             
             _networkDriver.ScheduleUpdate().Complete();
             
-            
-
 
             if (ConnectionMode == ConnectionMode.Server && !_networkConnection.IsCreated)
             {
@@ -256,8 +254,6 @@ namespace Gazeus.DesafioMatch3
             }
             
             EmptyQueuedMessages();
-            
-
         }
 
         private void Disconnect()
@@ -270,15 +266,11 @@ namespace Gazeus.DesafioMatch3
             Debug.Log("Disconnected");
             SceneManager.LoadScene("MainMenu");
         }
-
         private void OnDestroy()
         {
             Disconnect();
             StopNetworking();
         }
-
-
-
         private void ParseMessage(FixedString128Bytes message)
         {
             string messageAsString = message.ToString();
