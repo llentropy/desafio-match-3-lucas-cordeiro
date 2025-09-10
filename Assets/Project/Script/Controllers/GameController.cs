@@ -48,13 +48,12 @@ namespace Gazeus.DesafioMatch3.Controllers
             {
                 //Bind the events to the GameService and NetworkManager behaviours
                 _gameEngine.MatchGameMode = GameMode.Versus;
-                //_gameEngine.SendBlockedTilesToOpponnentEvent += (quantity) => SendBlockedTiles(quantity);
                 _networkManager.ReceivedBlockedTilesEvent += (quantity) => ReceiveBlockedTiles(quantity);
+                _networkManager.ReceivedOpponentFinalScoreEvent += (opponentFinalScore) => _endGameView.SetFinalScore(_gameEngine.GameScore, opponentFinalScore, _networkManager.PlayerName, _networkManager.OpponentName);
                 if(_networkManager.ConnectionMode == ConnectionMode.Client)
                 {
                     _networkManager.ReceivedUpdatedMatchClockEvent += (clock) => ClientSetMatchClock(clock);
                 }
-
                 SetupVersusModeUI();
             } else
             {
@@ -65,6 +64,12 @@ namespace Gazeus.DesafioMatch3.Controllers
         private void SendBlockedTiles(int quantity)
         {
             _networkManager.AddQueuedMessage($"SendBlockedTiles;{quantity}");
+        }
+
+        private void SendFinalScore(int finalScore)
+        {
+            _networkManager.AddQueuedMessage($"SendFinalScore;{finalScore}");
+
         }
 
         private void ReceiveBlockedTiles(int quantity)
@@ -92,7 +97,13 @@ namespace Gazeus.DesafioMatch3.Controllers
 
         private void ExitMatch()
         {
-            SceneManager.LoadScene("MainMenu");
+            if(_gameEngine.MatchGameMode == GameMode.Versus)
+            {
+                _networkManager.Disconnect();
+            } else
+            {
+                SceneManager.LoadScene("MainMenu");
+            }
         }
 
 
@@ -142,7 +153,6 @@ namespace Gazeus.DesafioMatch3.Controllers
             } else
             {
                 _versusModeStatusView.gameObject.SetActive(false);
-
             }
             _endGameView.gameObject.SetActive(false);
             List<List<Tile>> board = _gameEngine.StartGame(_boardWidth, _boardHeight);
@@ -159,9 +169,13 @@ namespace Gazeus.DesafioMatch3.Controllers
             if (_gameEngine.MatchGameMode == GameMode.Versus)
             {
                 _versusModeStatusView.gameObject.SetActive(false);
+                SendFinalScore(_gameEngine.GameScore);
             }
             _endGameView.gameObject.SetActive(true);
-            _endGameView.SetFinalScore(_gameEngine.GameScore);
+            if(_gameEngine.MatchGameMode == GameMode.SinglePlayer)
+            {
+                _endGameView.SetFinalScore(_gameEngine.GameScore);
+            }
         }
 
         private IEnumerator ResetScoreMultiplierAfterDecayTime()

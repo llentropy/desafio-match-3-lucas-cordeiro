@@ -29,6 +29,7 @@ namespace Gazeus.DesafioMatch3
 
         public event Action<int> ReceivedBlockedTilesEvent;
         public event Action<float> ReceivedUpdatedMatchClockEvent;
+        public event Action<int> ReceivedOpponentFinalScoreEvent;
         public string PlayerName { private set; get; }
         public string OpponentName { private set; get; }
 
@@ -68,7 +69,6 @@ namespace Gazeus.DesafioMatch3
 
         public void StartOfflineMatch()
         {
-            StopNetworking();
             SceneManager.LoadScene("Gameplay");
         }
 
@@ -187,15 +187,6 @@ namespace Gazeus.DesafioMatch3
             Debug.Log("Started Client");
         }
 
-        public void StopNetworking()
-        {
-            ConnectionMode = ConnectionMode.Disconnected;
-
-            _networkDriver.Dispose();
-
-            Debug.Log("network communications stopped");
-        }
-
         void Update()
         {
             if (!_networkDriver.IsCreated)
@@ -256,20 +247,31 @@ namespace Gazeus.DesafioMatch3
             EmptyQueuedMessages();
         }
 
-        private void Disconnect()
+        public void Disconnect()
         {
             if (_networkConnection.IsCreated)
             {
                 _networkConnection.Disconnect(_networkDriver);
             }
             _networkConnection = default;
-            Debug.Log("Disconnected");
+
+            StopNetworking();
+
             SceneManager.LoadScene("MainMenu");
         }
+
+        public void StopNetworking()
+        {
+            ConnectionMode = ConnectionMode.Disconnected;
+
+            _networkDriver.Dispose();
+
+            Debug.Log("network communications stopped");
+        }
+
         private void OnDestroy()
         {
             Disconnect();
-            StopNetworking();
         }
         private void ParseMessage(FixedString128Bytes message)
         {
@@ -291,6 +293,10 @@ namespace Gazeus.DesafioMatch3
                 case "SetMatchClock":
                     float receivedMatchClock = float.Parse(messageParts[1]);
                     ReceivedUpdatedMatchClockEvent.Invoke(receivedMatchClock);
+                    break;
+                case "SendFinalScore":
+                    int opponentFinalScore = int.Parse(messageParts[1]);
+                    ReceivedOpponentFinalScoreEvent.Invoke(opponentFinalScore);
                     break;
             }
         }

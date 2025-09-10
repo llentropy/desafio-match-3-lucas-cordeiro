@@ -25,9 +25,23 @@ namespace Gazeus.DesafioMatch3
         {
             MainMenuButtonPressed();
         }
-        public void SetFinalScore(int score)
+        public void SetFinalScore(int myScore, int opponentScore = -1, string playerName = "Your", string opponentName = "")
         {
-            finalScoreText.text = $"Final score: {score}";
+            finalScoreText.text = $"Your final score: {myScore}";
+            if(opponentScore != -1)
+            {
+                finalScoreText.text += $"\n{opponentName} final score: {opponentScore}";
+                if (myScore > opponentScore)
+                {
+                    finalScoreText.text += $"\n You won!!!";
+                } else if (myScore == opponentScore)
+                {
+                    finalScoreText.text += $"\n It's a draw :O";
+                } else
+                {
+                    finalScoreText.text += $"\n You lost :(";
+                }
+            } 
         }
 
     }

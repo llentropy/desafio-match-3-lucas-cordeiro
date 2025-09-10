@@ -24,8 +24,6 @@ namespace Gazeus.DesafioMatch3.Core
 
         public GameMode MatchGameMode = GameMode.SinglePlayer;
 
-        public event Action<int> SendBlockedTilesToOpponnentEvent;
-
         public void IncrementQuantityOfNextBlockedTiles(int increment)
         {
             quantityOfNextBlockedTiles += increment;
@@ -123,10 +121,7 @@ namespace Gazeus.DesafioMatch3.Core
                 scoreIncrement += GameConstants.BaseScoreIncrementPerPiece * quantityPerType[type] * scoreMultiplier;
             }
 
-            
-
             GameScore += scoreIncrement;
-
         }
 
         public List<BoardSequence> SwapTile(int fromX, int fromY, int toX, int toY)
