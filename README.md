@@ -14,4 +14,4 @@ My version implements the following features:
 
 In this mode, the game has a set timer for the match to end. After this time, the final score is shown and the player has the option to play again.
 
-The score is calculated based on a 
+The score is calculated with a base value, set in the script ```Script/Core/GameConstants.cs```. The score also has a multiplier, that increments this base value if the player can make combinations in quick succession
