@@ -1,8 +1,17 @@
 # Match-3
 
+## Original game content
+
+The original code had this content:
+
 ![Match-3](/Match3.png?raw=true "Match-3")
 
-Developed in Unity 2022.3.62f1
+## Implemented game content
 
-## Links
-- https://unity.com/releases/editor/archive
+My version implements the following features:
+
+### Main Single player game loop
+
+In this mode, the game has a set timer for the match to end. After this time, the final score is shown and the player has the option to play again.
+
+The score is calculated based on a 
